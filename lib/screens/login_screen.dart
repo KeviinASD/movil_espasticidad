@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:movil_espasticidad/screens/register_screen.dart';
 import 'package:movil_espasticidad/services/auth_service.dart';
 import 'package:movil_espasticidad/theme/app_theme.dart';
+import 'package:movil_espasticidad/core/providers/auth_store.dart';
+import 'package:movil_espasticidad/features/main/main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,30 +34,38 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final token = await _authService.login(
+      // Llamar al servicio de login
+      final authResponse = await _authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
       if (!mounted) return;
+
+      // Guardar en el store global
+      final authStore = context.read<AuthStore>();
+      await authStore.login(
+        user: authResponse.user,
+        token: authResponse.accessToken,
+      );
+
       setState(() => _isLoading = false);
 
-      if (token != null) {
-        // TODO: Navegar a la pantalla principal
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login exitoso')),
-        );
-        // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se recibió token.')),
+      // Navegar a la pantalla principal
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+          (route) => false,
         );
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
