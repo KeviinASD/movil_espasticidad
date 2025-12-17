@@ -58,4 +58,13 @@ class PatientTreatmentModel {
       if (treatment != null) 'treatment': treatment!.toJson(),
     };
   }
+
+  /// Nombre del tratamiento (para mostrar en UI)
+  String get treatmentName => treatment?.treatmentName ?? 'Tratamiento #$treatmentId';
+
+  /// Nombre del doctor (para mostrar en UI)
+  String get doctorName => doctor?.fullName ?? doctor?.username ?? 'Doctor #$doctorId';
+
+  /// Nombre del paciente (para mostrar en UI)
+  String get patientName => patient?.fullName ?? 'Paciente #$patientId';
 }

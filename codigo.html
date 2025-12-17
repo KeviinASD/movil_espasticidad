@@ -1,140 +1,264 @@
 <!DOCTYPE html>
-
 <html class="dark" lang="es"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Registro de Médico</title>
-<!-- Google Fonts -->
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
-<!-- Material Symbols -->
+<title>Interacción con IA para Diagnóstico</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<!-- Theme Configuration -->
 <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#137fec",
-                        "background-light": "#f6f7f8",
-                        "background-dark": "#101922",
-                        "surface-light": "#ffffff",
-                        "surface-dark": "#1c2127",
-                        "border-light": "#e5e7eb",
-                        "border-dark": "#3b4754",
-                        "text-primary-light": "#111827",
-                        "text-primary-dark": "#ffffff",
-                        "text-secondary-light": "#6b7280",
-                        "text-secondary-dark": "#9ca3af",
+                        "primary": "#007AFF", // iOS Blue
+                        "primary-dark": "#0A84FF",
+                        "background-light": "#F2F2F7", // iOS Light Background
+                        "background-dark": "#000000",
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#1C1C1E",
                     },
                     fontFamily: {
                         "display": ["Space Grotesk", "sans-serif"],
-                        "body": ["Noto Sans", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"]
                     },
-                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        'ios': '0 2px 8px rgba(0, 0, 0, 0.04)',
+                        'ios-card': '0 4px 12px rgba(0, 0, 0, 0.06)',
+                    }
                 },
             },
         }
     </script>
+<style>
+        body {
+            min-height: 100dvh;
+        }.no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
 <style>
     body {
       min-height: max(884px, 100dvh);
     }
   </style>
   </head>
-<body class="bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark antialiased font-display">
-<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
-<!-- TopAppBar -->
-<div class="sticky top-0 z-10 flex items-center bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm p-4 pb-2 justify-between border-b border-transparent dark:border-border-dark/30">
-<button class="text-text-primary-light dark:text-text-primary-dark flex size-12 shrink-0 items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-<span class="material-symbols-outlined text-[24px]">arrow_back_ios_new</span>
+<body class="antialiased text-gray-900 dark:text-gray-100 bg-background-light dark:bg-background-dark font-body selection:bg-primary/20">
+<div class="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden">
+<header class="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50">
+<button class="flex items-center justify-center p-2 -ml-2 rounded-full text-primary active:bg-gray-200/50 dark:active:bg-gray-700/50 transition-colors">
+<span class="material-symbols-outlined text-[26px]">arrow_back_ios_new</span>
+<span class="ml-1 text-base font-medium leading-none">Atrás</span>
 </button>
-<h2 class="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12">Crear Cuenta</h2>
-</div>
-<!-- Scrollable Content -->
-<div class="flex-1 flex flex-col items-center w-full max-w-md mx-auto">
-<!-- Branding Image -->
-<div class="w-full p-4 pb-0">
-<div class="w-full gap-1 overflow-hidden bg-gray-200 dark:bg-gray-800 aspect-[3/1] rounded-xl flex shadow-sm">
-<div class="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1" data-alt="Abstract blue digital medical network visualization" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDkHRdnWLWagcnTv7DadhJlF155fNjHpDQS3taOO4hdM4twnksDM2cDckc3sgE8AG_lqQFwtJGdHhnHUeOJN08-zdScDzPqGPXznsElA_k9fItPyVt5OilradF1qKajEeyRgVNIQEJXAKcxu3lx2KCBN6TxdN2YMY3_csAFHVi5v3TkklEdHEcBA-dBsnxvFqDDiy5aDx7hIh28QHyklVYeti_dUqWgNbLUg01aBL4CFgFCMoOx-kjJEQU8npSv_QV_4K-dYmB8Sgvl");'>
-<div class="w-full h-full bg-gradient-to-r from-primary/80 to-transparent mix-blend-multiply"></div>
-</div>
-</div>
-</div>
-<!-- Headline & Subtitle -->
-<div class="w-full">
-<h2 class="tracking-tight text-[28px] font-bold leading-tight px-4 text-center pt-5 text-text-primary-light dark:text-text-primary-dark">
-                    Registro de Médico
-                </h2>
-<p class="text-text-secondary-light dark:text-text-secondary-dark text-base font-normal leading-normal pb-6 pt-2 px-4 text-center">
-                    Únete a la red de investigación sobre espasticidad.
-                </p>
-</div>
-<!-- Form Fields -->
-<div class="w-full px-4 flex flex-col gap-5">
-<!-- Full Name -->
-<div class="flex flex-col gap-1.5">
-<label class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark ml-1">Nombre Completo</label>
-<div class="relative flex items-center">
-<span class="material-symbols-outlined absolute left-4 text-text-secondary-light dark:text-text-secondary-dark">person</span>
-<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark h-14 placeholder:text-text-secondary-light/50 dark:placeholder:text-text-secondary-dark/50 pl-12 pr-4 text-base font-normal leading-normal transition-all" placeholder="Ej. Dr. Juan Pérez" type="text"/>
-</div>
-</div>
-<!-- Email -->
-<div class="flex flex-col gap-1.5">
-<label class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark ml-1">Correo Electrónico</label>
-<div class="relative flex items-center">
-<span class="material-symbols-outlined absolute left-4 text-text-secondary-light dark:text-text-secondary-dark">mail</span>
-<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark h-14 placeholder:text-text-secondary-light/50 dark:placeholder:text-text-secondary-dark/50 pl-12 pr-4 text-base font-normal leading-normal transition-all" placeholder="nombre@clinica.com" type="email"/>
-</div>
-</div>
-<!-- Password -->
-<div class="flex flex-col gap-1.5">
-<label class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark ml-1">Contraseña</label>
-<div class="relative flex items-center">
-<span class="material-symbols-outlined absolute left-4 text-text-secondary-light dark:text-text-secondary-dark">lock</span>
-<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark h-14 placeholder:text-text-secondary-light/50 dark:placeholder:text-text-secondary-dark/50 pl-12 pr-12 text-base font-normal leading-normal transition-all" placeholder="••••••••" type="password"/>
-<button class="absolute right-4 text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors">
-<span class="material-symbols-outlined">visibility_off</span>
+<h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[17px] font-semibold text-gray-900 dark:text-white">Diagnóstico IA</h1>
+<button class="flex items-center justify-center p-2 -mr-2 rounded-full text-primary active:bg-gray-200/50 dark:active:bg-gray-700/50 transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
 </button>
+</header>
+<main class="flex-1 flex flex-col pb-24">
+<div class="px-4 py-5 flex items-start gap-4">
+<div class="relative shrink-0">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-16 w-16 shadow-sm border border-gray-200 dark:border-gray-700" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAXONatMlOlROd9IQBgEUzsFgBwvBgtzOBHCgpyTsYTrMSxQrnRy6-CISpQY40-Wk0Xop0OzCO_cKYLaY-0J-khcL6hPg5QZzcR6O2pCfr9l3OF0_gSYiRn67lV61wPG5JF2j8qFH0rMxmOOxFFdDyWgC6VDkxyFz17Vyd2m77QLxeFchgd2gxkMcpebAHmrNJsa8CBwA8b18vT1SpQph1SOCSfvV8yRD11OJ-oavNN6gzCj1jwDpsxYdYyG4Xkfu79eg4-tbrV7K1E");'></div>
+<div class="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1 border-2 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white text-[10px] block font-bold">check</span>
 </div>
 </div>
-<!-- Confirm Password -->
-<div class="flex flex-col gap-1.5">
-<label class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark ml-1">Confirmar Contraseña</label>
-<div class="relative flex items-center">
-<span class="material-symbols-outlined absolute left-4 text-text-secondary-light dark:text-text-secondary-dark">lock_reset</span>
-<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark h-14 placeholder:text-text-secondary-light/50 dark:placeholder:text-text-secondary-dark/50 pl-12 pr-4 text-base font-normal leading-normal transition-all" placeholder="••••••••" type="password"/>
-</div>
-</div>
-</div>
-<!-- Security Note -->
-<div class="w-full px-4 pt-6 pb-2">
-<div class="flex items-center justify-center gap-2 text-text-secondary-light dark:text-text-secondary-dark">
-<span class="material-symbols-outlined text-sm">verified_user</span>
-<span class="text-xs font-medium">Sus datos están protegidos y encriptados.</span>
-</div>
-</div>
-<!-- Action Button -->
-<div class="w-full px-4 pt-4 pb-8">
-<button class="w-full bg-primary hover:bg-blue-600 text-white font-bold h-14 rounded-xl text-lg tracking-wide shadow-lg shadow-primary/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-<span>Registrarse</span>
-<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
-</button>
-<div class="mt-6 text-center">
-<p class="text-text-secondary-light dark:text-text-secondary-dark text-sm">
-                        ¿Ya tienes una cuenta? 
-                        <a class="text-primary font-bold hover:underline ml-1" href="#">Inicia Sesión</a>
-</p>
+<div class="flex flex-col pt-1">
+<h2 class="text-xl font-bold text-gray-900 dark:text-white leading-tight font-display">Juan Pérez</h2>
+<p class="text-sm text-gray-500 dark:text-gray-400 font-medium">45 años • ID: #849201</p>
+<div class="flex items-center gap-1.5 mt-2 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1 rounded-md w-fit">
+<span class="material-symbols-outlined text-primary text-[16px]">accessibility_new</span>
+<span class="text-xs font-semibold text-primary">Espasticidad post-ictus</span>
 </div>
 </div>
 </div>
-<!-- Bottom Spacer -->
-<div class="h-5"></div>
+<div class="px-4 mb-6">
+<details class="group rounded-2xl bg-surface-light dark:bg-surface-dark border border-gray-200/50 dark:border-gray-800 shadow-sm overflow-hidden transition-all duration-300">
+<summary class="flex cursor-pointer items-center justify-between px-4 py-3.5 select-none list-none active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
+<div class="flex items-center gap-3">
+<div class="bg-primary/10 rounded-full p-1.5 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">clinical_notes</span>
 </div>
+<span class="text-sm font-semibold text-gray-900 dark:text-white">Datos Clínicos (Entrada)</span>
+</div>
+<span class="material-symbols-outlined text-gray-400 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="px-4 pb-4 pt-1 border-t border-gray-100 dark:border-gray-800">
+<div class="space-y-3 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+<div class="grid grid-cols-[auto_1fr] gap-x-2">
+<span class="font-semibold text-gray-900 dark:text-white">• Hallazgos:</span>
+<span>Hipertonía marcada en flexores codo der. y extensores rodilla. Clonus &gt; 3 batidas.</span>
+</div>
+<div class="grid grid-cols-[auto_1fr] gap-x-2">
+<span class="font-semibold text-gray-900 dark:text-white">• Escala MAS:</span>
+<span>Previa 2, reporte de empeoramiento subjetivo.</span>
+</div>
+<div class="grid grid-cols-[auto_1fr] gap-x-2">
+<span class="font-semibold text-gray-900 dark:text-white">• Rx:</span>
+<span>Baclofeno 10mg c/8h (respuesta subóptima).</span>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-end">
+<button class="text-xs font-semibold text-primary flex items-center gap-1 active:opacity-70">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+                                Editar Datos
+                            </button>
+</div>
+</div>
+</details>
+</div>
+<div class="px-4 mb-3 flex items-center justify-between">
+<h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Análisis Inteligente</h3>
+<span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+</div>
+<div class="px-4 mb-5">
+<div class="bg-gray-200/80 dark:bg-gray-800 p-1 rounded-lg flex relative">
+<label class="flex-1 text-center relative z-10 cursor-pointer">
+<input checked="" class="peer sr-only" name="ai_model" type="radio" value="gpt4"/>
+<div class="py-1.5 px-3 rounded-[6px] text-[13px] font-semibold transition-all duration-200 text-gray-600 dark:text-gray-400 peer-checked:bg-white dark:peer-checked:bg-[#636366] peer-checked:text-black dark:peer-checked:text-white peer-checked:shadow-sm">
+                            ChatGPT-4
+                        </div>
+</label>
+<label class="flex-1 text-center relative z-10 cursor-pointer">
+<input class="peer sr-only" name="ai_model" type="radio" value="copilot"/>
+<div class="py-1.5 px-3 rounded-[6px] text-[13px] font-semibold transition-all duration-200 text-gray-600 dark:text-gray-400 peer-checked:bg-white dark:peer-checked:bg-[#636366] peer-checked:text-black dark:peer-checked:text-white peer-checked:shadow-sm">
+                            Copilot Medical
+                        </div>
+</label>
+</div>
+</div>
+<div class="px-4 mb-8">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-ios-card border border-gray-100 dark:border-gray-800 overflow-hidden relative">
+<div class="h-1.5 w-full bg-gradient-to-r from-primary to-purple-500"></div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">ChatGPT-4</span>
+<span class="text-xs text-gray-400 dark:text-gray-500">Hace 2 min</span>
+</div>
+<h3 class="text-xl font-bold text-gray-900 dark:text-white font-display">Espasticidad Grado 3 (MAS)</h3>
+</div>
+<div class="flex flex-col items-end">
+<div class="flex items-center justify-center h-10 w-10 rounded-full border-[3px] border-green-500/30 text-green-600 dark:text-green-400 font-bold text-xs bg-green-500/5">
+                                    89%
+                                </div>
+<span class="text-[10px] text-gray-400 mt-1 font-medium">Confianza</span>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<h4 class="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">psychology</span> Razonamiento
+                                </h4>
+<p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
+                                    La resistencia considerable en todo el ROM pasivo y el clonus sostenido indican progresión clínica. El fallo a dosis medias de Baclofeno sugiere necesidad de terapia combinada o intervencionismo.
+                                </p>
+</div>
+<div>
+<h4 class="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">medical_services</span> Plan Sugerido
+                                </h4>
+<ul class="space-y-2">
+<li class="flex gap-2.5 items-start">
+<span class="material-symbols-outlined text-primary text-[18px] mt-px">check_circle</span>
+<span class="text-sm text-gray-800 dark:text-gray-200">Infiltración Toxina Botulínica (Puntos clave)</span>
+</li>
+<li class="flex gap-2.5 items-start">
+<span class="material-symbols-outlined text-primary text-[18px] mt-px">check_circle</span>
+<span class="text-sm text-gray-800 dark:text-gray-200">Rotar a Tizanidina + Fisioterapia intensiva</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="bg-gray-50 dark:bg-[#252529] px-5 py-3 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+<button class="text-primary text-xs font-bold flex items-center gap-1 hover:text-primary-dark transition-colors">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+                            Copiar Texto
+                        </button>
+<button class="text-gray-500 hover:text-gray-900 dark:hover:text-white text-xs font-medium flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[16px]">thumb_down</span>
+                            Reportar Error
+                        </button>
+</div>
+</div>
+</div>
+<div class="px-4">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">fact_check</span>
+<h3 class="text-base font-bold text-gray-900 dark:text-white">Selección para Base de Datos</h3>
+</div>
+<div class="space-y-3 mb-5">
+<label class="relative flex items-start p-4 rounded-xl border-2 border-primary bg-primary/5 cursor-pointer transition-all shadow-sm ring-1 ring-primary/20">
+<div class="flex items-center h-5 mt-0.5">
+<input checked="" class="w-5 h-5 text-primary border-gray-300 focus:ring-primary dark:bg-gray-700 dark:border-gray-600" name="diagnosis_choice" type="radio" value="option_a"/>
+</div>
+<div class="ml-3 w-full">
+<div class="flex justify-between items-center mb-1">
+<span class="block text-sm font-bold text-gray-900 dark:text-white">Opción A: ChatGPT-4</span>
+<span class="text-xs font-bold text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded text-center">89% Confianza</span>
+</div>
+<p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Dx: Grado 3 (MAS) - Intervención Local</p>
+<div class="mt-2 text-[11px] text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">recommend</span>
+                                Recomendado por sistema
+                            </div>
+</div>
+</label>
+<label class="relative flex items-start p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-surface-light dark:bg-surface-dark hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-all">
+<div class="flex items-center h-5 mt-0.5">
+<input class="w-5 h-5 text-gray-400 border-gray-300 focus:ring-primary dark:bg-gray-700 dark:border-gray-600" name="diagnosis_choice" type="radio" value="option_b"/>
+</div>
+<div class="ml-3 w-full">
+<div class="flex justify-between items-center mb-1">
+<span class="block text-sm font-bold text-gray-900 dark:text-white">Opción B: Copilot Medical</span>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-500">76% Confianza</span>
+</div>
+<p class="text-xs text-gray-600 dark:text-gray-400">Dx: Grado 2 (MAS) - Ajuste Farmacológico</p>
+</div>
+</label>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl p-4 border border-gray-200 dark:border-gray-800">
+<label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 block" for="justification">Justificación de la elección</label>
+<div class="flex flex-wrap gap-2 mb-3">
+<button class="px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-medium hover:bg-primary/20 transition-colors" type="button">
+                            Clínica Coincidente
+                        </button>
+<button class="px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-transparent text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" type="button">
+                            Preferencia Terapéutica
+                        </button>
+<button class="px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-transparent text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" type="button">
+                            Seguridad
+                        </button>
+</div>
+<textarea class="w-full rounded-lg bg-gray-50 dark:bg-[#101922] border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary dark:focus:ring-primary sm:text-sm p-3 resize-none" id="justification" placeholder="Escriba su razonamiento clínico para validar esta opción en ai_evaluations..." rows="3"></textarea>
+<div class="mt-2 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-gray-400 text-[14px]">info</span>
+<p class="text-[10px] text-gray-400">Esta justificación se almacenará junto con `is_selected`.</p>
+</div>
+</div>
+</div>
+</main>
+<div class="fixed bottom-0 left-0 right-0 p-4 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 z-50 safe-area-bottom">
+<button class="w-full bg-primary hover:bg-primary-dark active:scale-[0.98] transition-all text-white font-bold text-[15px] py-3.5 px-4 rounded-xl shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">save_as</span>
+                Confirmar y Guardar Evaluación
+            </button>
+</div>
+</div>
+
 </body></html>

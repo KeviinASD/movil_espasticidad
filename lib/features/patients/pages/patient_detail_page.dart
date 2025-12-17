@@ -9,6 +9,7 @@ import '../../../core/services/patient_treatments_service.dart';
 import '../../../theme/app_theme.dart';
 import '../widgets/treatment_card.dart';
 import 'new_treatment_page.dart';
+import '../../appointments/pages/appointments_page.dart';
 
 class PatientDetailPage extends StatefulWidget {
   final PatientModel patient;
@@ -425,7 +426,16 @@ class _PatientDetailPageState extends State<PatientDetailPage>
                             .map((treatment) => TreatmentCard(
                                   treatment: treatment,
                                   onTap: () {
-                                    // TODO: Ver detalle del tratamiento
+                                    // Navegar a gestión de citas
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AppointmentsPage(
+                                          patientTreatmentId: treatment.patientTreatmentId,
+                                          treatment: treatment,
+                                        ),
+                                      ),
+                                    );
                                   },
                                 ))
                             .toList(),
@@ -629,13 +639,98 @@ class _PatientDetailPageState extends State<PatientDetailPage>
   }
 
   Widget _buildCitasTab(bool isDark) {
-    return Center(
-      child: Text(
-        'Citas - Próximamente',
-        style: GoogleFonts.notoSans(
-          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+    if (_treatments.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.event_note,
+              size: 60,
+              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No hay tratamientos asignados',
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Agrega un tratamiento para ver las citas',
+              style: GoogleFonts.notoSans(
+                fontSize: 14,
+                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+              ),
+            ),
+          ],
         ),
-      ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _treatments.length,
+      itemBuilder: (context, index) {
+        final treatment = _treatments[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+            ),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.event_note,
+                color: AppTheme.primary,
+              ),
+            ),
+            title: Text(
+              treatment.treatmentName,
+              style: GoogleFonts.spaceGrotesk(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : AppTheme.textPrimary,
+              ),
+            ),
+            subtitle: Text(
+              'Ver citas del tratamiento',
+              style: GoogleFonts.notoSans(
+                fontSize: 13,
+                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+              ),
+            ),
+            trailing: Icon(
+              Icons.chevron_right,
+              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AppointmentsPage(
+                    patientTreatmentId: treatment.patientTreatmentId,
+                    treatment: treatment,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
