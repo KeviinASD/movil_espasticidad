@@ -7,6 +7,8 @@ import '../../../core/models/ai_evaluation_model.dart';
 import '../../../core/services/ai_tools_service.dart';
 import '../../../core/services/ai_evaluations_service.dart';
 import '../../../core/services/diagnoses_service.dart';
+import '../../../core/services/appointment_answers_service.dart';
+import '../../../core/models/appointment_answer_model.dart';
 import '../../../core/providers/auth_store.dart';
 
 /// Pantalla de diagnóstico con IA
@@ -30,10 +32,12 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
   final AiToolsService _aiToolsService = AiToolsService();
   final AiEvaluationsService _aiEvaluationsService = AiEvaluationsService();
   final DiagnosesService _diagnosesService = DiagnosesService();
+  final AppointmentAnswersService _appointmentAnswersService = AppointmentAnswersService();
   final TextEditingController _justificationController = TextEditingController();
 
   List<AiToolModel> _aiTools = [];
   List<AiEvaluationModel> _evaluations = [];
+  List<AppointmentAnswerModel> _clinicalAnswers = [];
   int _selectedToolIndex = 0;
   int? _selectedEvaluationId;
   String _selectedJustificationChip = 'Clínica Coincidente';
@@ -74,6 +78,12 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
         token: token,
       );
 
+      // Cargar respuestas de evaluación clínica (datos reales del paciente)
+      final answers = await _appointmentAnswersService.getByAppointment(
+        widget.appointment.appointmentId,
+        token: token,
+      );
+
       // Encontrar evaluación seleccionada
       final selected = evaluations.where((e) => e.isSelected).firstOrNull;
 
@@ -81,6 +91,7 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
       setState(() {
         _aiTools = aiTools;
         _evaluations = evaluations;
+        _clinicalAnswers = answers;
         _selectedEvaluationId = selected?.evaluationId;
         _isLoading = false;
       });
@@ -93,6 +104,92 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
     }
   }
 
+  /// Construye los datos clínicos desde la evaluación clínica guardada
+  Map<String, dynamic> _buildClinicalDataFromAnswers() {
+    final findings = <String>[];
+    String? masValue;
+
+    // Agrupar respuestas por pregunta y tomar la más reciente
+    final Map<int, AppointmentAnswerModel> latestAnswers = {};
+    for (final answer in _clinicalAnswers) {
+      if (answer.numericValue == null) continue;
+      
+      final questionId = answer.questionId;
+      final existingAnswer = latestAnswers[questionId];
+      if (existingAnswer == null ||
+          (answer.answerId != null &&
+              existingAnswer.answerId != null &&
+              answer.answerId! > existingAnswer.answerId!)) {
+        latestAnswers[questionId] = answer;
+      }
+    }
+
+    // Mapear respuestas cuantitativas de la evaluación clínica (6 indicadores)
+    for (final answer in latestAnswers.values) {
+      final question = answer.question;
+      if (question == null || answer.numericValue == null) continue;
+
+      final questionText = question.questionText.toLowerCase();
+      final value = answer.numericValue!;
+
+      // 1. Modified Ashworth Scale (MAS)
+      if (questionText.contains('ashworth') || questionText.contains('mas')) {
+        findings.add('Modified Ashworth Scale (MAS): ${value.toString()}');
+        masValue = value.toString();
+      } 
+      // 2. Frecuencia de espasmos musculares
+      else if (questionText.contains('espasmo') || questionText.contains('frecuencia')) {
+        findings.add('Frecuencia de espasmos musculares: ${value.toInt()} por día');
+      } 
+      // 3. H-Reflex Ratio
+      else if (questionText.contains('h-reflex') || 
+               questionText.contains('hmax') || 
+               questionText.contains('mmax') ||
+               questionText.contains('h max') ||
+               questionText.contains('m max')) {
+        findings.add('H-Reflex Ratio (Hmax / Mmax): ${value.toStringAsFixed(2)}');
+      } 
+      // 4. Stretch Reflex Threshold (SRT)
+      else if (questionText.contains('stretch') || 
+               questionText.contains('srt') || 
+               questionText.contains('threshold')) {
+        findings.add('Stretch Reflex Threshold (SRT): ${value.toStringAsFixed(1)} °/s');
+      }
+      // 5. Ritmo cardíaco
+      else if (questionText.contains('ritmo') || 
+               questionText.contains('cardiaco') || 
+               questionText.contains('cardíaco') ||
+               questionText.contains('bpm')) {
+        findings.add('Ritmo cardíaco: ${value.toInt()} bpm');
+      }
+      // 6. Peso
+      else if (questionText.contains('peso') || questionText.contains('kg')) {
+        findings.add('Peso: ${value.toStringAsFixed(1)} kg');
+      }
+      // Cualquier otro indicador
+      else {
+        findings.add('${question.questionText}: ${value}');
+      }
+    }
+
+    // Si hay notas en la cita, agregarlas
+    if (widget.appointment.notes != null && widget.appointment.notes!.isNotEmpty) {
+      findings.add('Notas adicionales: ${widget.appointment.notes}');
+    }
+
+    // Construir texto de hallazgos final
+    final findingsText = findings.isNotEmpty
+        ? findings.join('. ')
+        : 'Evaluación clínica realizada. Datos cuantitativos registrados.';
+
+    return {
+      'findings': findingsText,
+      'masScale': masValue,
+      'medications': null,
+      'patientAge': null,
+    };
+  }
+
   Future<void> _runAnalysis() async {
     if (_aiTools.isEmpty) return;
 
@@ -103,19 +200,33 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
       final token = authStore.token;
       final selectedTool = _aiTools[_selectedToolIndex];
 
-      // Simular análisis de IA (en producción, esto llamaría a una API real)
-      await Future.delayed(const Duration(seconds: 2));
+      // Construir datos clínicos combinando entrada manual y datos cuantitativos
+      final clinicalData = _buildClinicalDataFromAnswers();
 
-      // Crear resultado simulado basado en la herramienta seleccionada
-      final result = selectedTool.name.contains('GPT')
-          ? 'La resistencia considerable en todo el ROM pasivo y el clonus sostenido indican progresión clínica. El fallo a dosis medias de Baclofeno sugiere necesidad de terapia combinada o intervencionismo.'
-          : 'Análisis indica espasticidad moderada con respuesta parcial al tratamiento actual. Se recomienda ajuste farmacológico antes de considerar intervención.';
+      // Asegurar que findings no esté vacío (requerido por el backend)
+      final findings = clinicalData['findings'] as String?;
+      if (findings == null || findings.trim().isEmpty || _clinicalAnswers.isEmpty) {
+        throw Exception('No hay datos de evaluación clínica disponibles. Por favor, complete la evaluación clínica primero.');
+      }
 
-      // Crear evaluación en el backend
-      await _aiEvaluationsService.create(
+      // Validar que appointmentId y aiToolId sean válidos
+      if (widget.appointment.appointmentId <= 0) {
+        throw Exception('ID de cita inválido');
+      }
+      
+      if (selectedTool.aiToolId <= 0) {
+        throw Exception('ID de herramienta de IA inválido');
+      }
+
+      // Llamar al endpoint del backend que usa GPT/Copilot para generar el análisis
+      await _aiEvaluationsService.generateWithCopilot(
         appointmentId: widget.appointment.appointmentId,
         aiToolId: selectedTool.aiToolId,
-        aiResult: result,
+        findings: findings.trim(),
+        masScale: clinicalData['masScale'] as String?,
+        medications: clinicalData['medications'] as String?,
+        patientAge: clinicalData['patientAge'] as int?,
+        patientCondition: widget.patientCondition ?? 'Espasticidad post-ictus',
         token: token,
       );
 
@@ -124,12 +235,32 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
       // Recargar evaluaciones
       await _loadData();
       
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Análisis completado exitosamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
     } catch (e) {
       if (!mounted) return;
+      
+      // Extraer el mensaje de error
+      String errorMessage = e.toString().replaceFirst('Exception: ', '');
+      
+      // Si el error contiene información adicional, intentar extraerla
+      if (errorMessage.contains(':')) {
+        final parts = errorMessage.split(':');
+        if (parts.length > 1) {
+          errorMessage = parts.sublist(1).join(':').trim();
+        }
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(errorMessage.isNotEmpty ? errorMessage : 'Error al generar análisis'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
         ),
       );
     } finally {
@@ -329,15 +460,23 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
           // Título análisis
           _buildAnalysisHeader(isDark),
           
-          // Resultados de IA
-          if (_evaluations.isNotEmpty)
-            _buildAiResultCard(isDark)
-          else if (_isAnalyzing)
-            _buildAnalyzingCard(isDark)
-          else
-            _buildNoResultsCard(isDark),
+          // Resultados de IA (solo mostrar si hay evaluaciones para la herramienta seleccionada)
+          Builder(
+            builder: (context) {
+              final selectedTool = _aiTools.isNotEmpty ? _aiTools[_selectedToolIndex] : null;
+              final hasEvaluationsForTool = selectedTool != null && 
+                  _evaluations.any((e) => e.aiToolId == selectedTool.aiToolId);
+              
+              if (hasEvaluationsForTool)
+                return _buildAiResultCard(isDark);
+              else if (_isAnalyzing)
+                return _buildAnalyzingCard(isDark);
+              else
+                return _buildNoResultsCard(isDark);
+            },
+          ),
           
-          // Selección para base de datos
+          // Selección para base de datos (mostrar si hay CUALQUIERA evaluación disponible)
           if (_evaluations.isNotEmpty) ...[
             _buildSelectionSection(isDark),
             _buildJustificationSection(isDark),
@@ -504,16 +643,7 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
                     ),
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildClinicalDataRow('Hallazgos:', 'Hipertonía marcada en flexores codo der.', isDark),
-                    const SizedBox(height: 8),
-                    _buildClinicalDataRow('Escala MAS:', 'Previa 2, reporte de empeoramiento.', isDark),
-                    const SizedBox(height: 8),
-                    _buildClinicalDataRow('Rx:', 'Baclofeno 10mg c/8h (respuesta subóptima).', isDark),
-                  ],
-                ),
+                child: _buildClinicalDataDisplay(isDark),
               ),
             ],
           ),
@@ -522,28 +652,133 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
     );
   }
 
-  Widget _buildClinicalDataRow(String label, String value, bool isDark) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '• $label ',
+  Widget _buildClinicalDataDisplay(bool isDark) {
+    if (_clinicalAnswers.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          'No hay datos de evaluación clínica disponibles. Por favor, complete la evaluación clínica primero.',
           style: GoogleFonts.notoSans(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
           ),
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: GoogleFonts.notoSans(
-              fontSize: 14,
-              color: isDark ? Colors.grey[300] : Colors.grey[600],
-            ),
-          ),
-        ),
-      ],
+      );
+    }
+
+    // Agrupar respuestas por questionId para evitar duplicados
+    // Si hay múltiples respuestas para la misma pregunta, tomar la más reciente
+    final Map<int, AppointmentAnswerModel> uniqueAnswers = {};
+    for (final answer in _clinicalAnswers) {
+      if (answer.numericValue != null) {
+        // Si ya existe una respuesta para esta pregunta, mantener la que tenga el answerId más alto (más reciente)
+        if (!uniqueAnswers.containsKey(answer.questionId) || 
+            (answer.answerId != null && 
+             uniqueAnswers[answer.questionId]?.answerId != null &&
+             answer.answerId! > uniqueAnswers[answer.questionId]!.answerId!)) {
+          uniqueAnswers[answer.questionId] = answer;
+        }
+      }
+    }
+
+    // Convertir a lista y ordenar por questionId para mantener consistencia
+    final uniqueAnswersList = uniqueAnswers.values.toList()
+      ..sort((a, b) => a.questionId.compareTo(b.questionId));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: uniqueAnswersList.map((answer) {
+        final question = answer.question;
+        if (question == null || answer.numericValue == null) {
+          return const SizedBox.shrink();
+        }
+
+        final questionText = question.questionText;
+        final value = answer.numericValue!;
+        String displayValue = '';
+        String unit = '';
+        String label = questionText;
+
+        // Formatear el valor según el tipo de pregunta (6 indicadores)
+        final textLower = questionText.toLowerCase();
+        
+        // 1. Modified Ashworth Scale (MAS)
+        if (textLower.contains('ashworth') || textLower.contains('mas')) {
+          displayValue = value.toString();
+          unit = '';
+          label = 'Modified Ashworth Scale (MAS)';
+        } 
+        // 2. Frecuencia de espasmos musculares
+        else if (textLower.contains('espasmo') || textLower.contains('frecuencia')) {
+          displayValue = value.toInt().toString();
+          unit = '/día';
+          label = 'Frecuencia de espasmos musculares';
+        } 
+        // 3. H-Reflex Ratio
+        else if (textLower.contains('h-reflex') || 
+                 textLower.contains('hmax') || 
+                 textLower.contains('mmax') ||
+                 textLower.contains('h max') ||
+                 textLower.contains('m max')) {
+          displayValue = value.toStringAsFixed(2);
+          unit = '';
+          label = 'H-Reflex Ratio (Hmax / Mmax)';
+        } 
+        // 4. Stretch Reflex Threshold (SRT)
+        else if (textLower.contains('stretch') || 
+                 textLower.contains('srt') || 
+                 textLower.contains('threshold')) {
+          displayValue = value.toStringAsFixed(1);
+          unit = '°/s';
+          label = 'Stretch Reflex Threshold (SRT)';
+        }
+        // 5. Ritmo cardíaco
+        else if (textLower.contains('ritmo') || 
+                 textLower.contains('cardiaco') || 
+                 textLower.contains('cardíaco') ||
+                 textLower.contains('bpm')) {
+          displayValue = value.toInt().toString();
+          unit = 'bpm';
+          label = 'Ritmo cardíaco';
+        }
+        // 6. Peso
+        else if (textLower.contains('peso') || textLower.contains('kg')) {
+          displayValue = value.toStringAsFixed(1);
+          unit = 'kg';
+          label = 'Peso';
+        }
+        // Cualquier otro indicador
+        else {
+          displayValue = value.toString();
+          unit = '';
+        }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• $label: ',
+                      style: GoogleFonts.notoSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        unit.isNotEmpty ? '$displayValue $unit' : displayValue,
+                        style: GoogleFonts.notoSans(
+                          fontSize: 14,
+                          color: isDark ? Colors.grey[300] : Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+      }).toList(),
     );
   }
 
@@ -599,7 +834,13 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
                 
                 return Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedToolIndex = index),
+                    onTap: () {
+                      setState(() {
+                        _selectedToolIndex = index;
+                        // Resetear evaluación seleccionada al cambiar de herramienta
+                        _selectedEvaluationId = null;
+                      });
+                    },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -744,10 +985,20 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
   }
 
   Widget _buildAiResultCard(bool isDark) {
-    // Mostrar la evaluación más reciente
-    final evaluation = _evaluations.last;
+    // Filtrar evaluaciones por la herramienta seleccionada
+    final selectedTool = _aiTools[_selectedToolIndex];
+    final filteredEvaluations = _evaluations
+        .where((e) => e.aiToolId == selectedTool.aiToolId)
+        .toList();
+    
+    if (filteredEvaluations.isEmpty) {
+      return _buildNoResultsCard(isDark);
+    }
+    
+    // Mostrar la evaluación más reciente de la herramienta seleccionada
+    final evaluation = filteredEvaluations.last;
     final result = AiDiagnosisResult.fromAiResult(evaluation.aiResult);
-    final toolName = evaluation.aiTool?.shortName ?? 'IA';
+    final toolName = selectedTool.shortName;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -812,7 +1063,7 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Hace 2 min',
+                                _formatTimeAgo(evaluation.evaluationDate),
                                 style: GoogleFonts.notoSans(
                                   fontSize: 12,
                                   color: Colors.grey[500],
@@ -1008,7 +1259,32 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
     );
   }
 
+  /// Formatear tiempo transcurrido
+  String _formatTimeAgo(DateTime? date) {
+    if (date == null) return 'Reciente';
+    
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inMinutes < 1) {
+      return 'Hace un momento';
+    } else if (difference.inMinutes < 60) {
+      return 'Hace ${difference.inMinutes} min';
+    } else if (difference.inHours < 24) {
+      return 'Hace ${difference.inHours} h';
+    } else if (difference.inDays < 7) {
+      return 'Hace ${difference.inDays} d';
+    } else {
+      return 'Hace ${(difference.inDays / 7).floor()} sem';
+    }
+  }
+
   Widget _buildSelectionSection(bool isDark) {
+    // Mostrar TODAS las evaluaciones (ChatGPT y Copilot) para que el usuario pueda elegir
+    if (_evaluations.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1030,7 +1306,7 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
           ),
           const SizedBox(height: 16),
           
-          // Opciones de evaluación
+          // Opciones de evaluación (TODAS las evaluaciones disponibles)
           ..._evaluations.asMap().entries.map((entry) {
             final index = entry.key;
             final eval = entry.value;
@@ -1309,4 +1585,5 @@ class _AiDiagnosisPageState extends State<AiDiagnosisPage> {
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 }
+
 

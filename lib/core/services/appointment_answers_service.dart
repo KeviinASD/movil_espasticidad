@@ -35,16 +35,20 @@ class AppointmentAnswersService {
   Future<AppointmentAnswerModel> create({
     required int appointmentId,
     required int questionId,
-    required double numericValue,
+    double? numericValue,
     String? token,
   }) async {
     try {
       final uri = Uri.parse('$baseUrl/appointment-answers');
-      final body = {
+      final body = <String, dynamic>{
         'appointmentId': appointmentId,
         'questionId': questionId,
-        'numericValue': numericValue,
       };
+      
+      // Solo incluir numericValue si no es null
+      if (numericValue != null) {
+        body['numericValue'] = numericValue;
+      }
 
       final response = await http.post(
         uri,

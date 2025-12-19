@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'ai_tool_model.dart';
 
 /// Modelo de evaluación con IA
@@ -94,26 +95,46 @@ class AiDiagnosisResult {
   /// Parsear resultado JSON de la IA
   factory AiDiagnosisResult.fromAiResult(String aiResult) {
     try {
-      // Intentar parsear como JSON
-      final Map<String, dynamic> parsed = {};
-      // Por ahora, simular un resultado estructurado
+      // Parsear el JSON que viene del backend
+      final Map<String, dynamic> parsed = jsonDecode(aiResult);
+      
+      // Parsear confidence (puede venir como int, double, o string)
+      int confidence = 85;
+      final confidenceValue = parsed['confidence'];
+      if (confidenceValue != null) {
+        if (confidenceValue is int) {
+          confidence = confidenceValue;
+        } else if (confidenceValue is double) {
+          confidence = confidenceValue.toInt();
+        } else if (confidenceValue is String) {
+          confidence = int.tryParse(confidenceValue) ?? 85;
+        }
+      }
+      
       return AiDiagnosisResult(
-        diagnosis: 'Espasticidad Grado 3 (MAS)',
-        confidencePercent: 89,
-        reasoning: aiResult.isNotEmpty 
-            ? aiResult 
-            : 'Análisis basado en los datos clínicos proporcionados.',
-        suggestedPlan: [
-          'Infiltración Toxina Botulínica (Puntos clave)',
-          'Fisioterapia intensiva especializada',
-          'Seguimiento en 4 semanas',
-        ],
+        diagnosis: parsed['diagnosis'] as String? ?? 'Espasticidad Grado 3 (MAS)',
+        confidencePercent: confidence,
+        reasoning: parsed['reasoning'] as String? ?? 
+                  'Análisis basado en los datos clínicos proporcionados.',
+        suggestedPlan: parsed['suggestedPlan'] != null
+            ? List<String>.from(parsed['suggestedPlan'] as List)
+            : [
+                'Infiltración Toxina Botulínica (Puntos clave)',
+                'Fisioterapia intensiva especializada',
+                'Seguimiento en 4 semanas',
+              ],
       );
-    } catch (_) {
+    } catch (e) {
+      // Si falla el parseo, intentar extraer información del string
+      print('Error parseando aiResult: $e');
+      print('aiResult recibido: $aiResult');
+      
       return AiDiagnosisResult(
         diagnosis: 'Análisis pendiente',
         confidencePercent: 0,
-        reasoning: aiResult,
+        reasoning: aiResult.isNotEmpty 
+            ? aiResult 
+            : 'Error al parsear el resultado del análisis.',
         suggestedPlan: [],
       );
     }

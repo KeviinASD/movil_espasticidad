@@ -61,8 +61,8 @@ class _MainScreenState extends State<MainScreen> {
                   isDark: isDark,
                 ),
                 _buildNavItem(
-                  icon: Icons.search,
-                  label: 'Investigar',
+                  icon: Icons.analytics,
+                  label: 'Analíticas',
                   index: 2,
                   isDark: isDark,
                 ),

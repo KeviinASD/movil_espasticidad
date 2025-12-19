@@ -303,13 +303,13 @@ class _NewAppointmentPageState extends State<NewAppointmentPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Badge de investigación
+        // Badge de analíticas
         Row(
           children: [
-            Icon(Icons.science, size: 16, color: AppTheme.primary),
+            Icon(Icons.analytics, size: 16, color: AppTheme.primary),
             const SizedBox(width: 6),
             Text(
-              'INVESTIGACIÓN CLÍNICA',
+              'ANALÍTICAS CLÍNICAS',
               style: TextStyle(
                 color: AppTheme.primary,
                 fontSize: 11,

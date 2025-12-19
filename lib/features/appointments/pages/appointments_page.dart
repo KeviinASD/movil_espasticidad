@@ -6,7 +6,6 @@ import '../../../core/services/appointments_service.dart';
 import '../../../core/providers/auth_store.dart';
 import '../../../theme/app_theme.dart';
 import '../widgets/appointment_card.dart';
-import '../widgets/calendar_day_widget.dart';
 import '../widgets/progress_card.dart';
 import 'new_appointment_page.dart';
 import 'clinical_evaluation_page.dart';
@@ -31,8 +30,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   final AppointmentsService _appointmentsService = AppointmentsService();
   
   List<AppointmentModel> _appointments = [];
+  List<AppointmentModel> _filteredAppointments = [];
   bool _isLoading = true;
   String? _error;
+  DateTime _selectedMonth = DateTime.now();
+  DateTime? _selectedDate;
   int _selectedDayIndex = 3; // Día seleccionado por defecto (Jueves)
 
   @override
@@ -60,6 +62,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       if (!mounted) return;
       setState(() {
         _appointments = appointments;
+        _filteredAppointments = appointments; // Mostrar todas las citas por defecto
         _isLoading = false;
       });
     } catch (e) {
@@ -69,6 +72,21 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         _isLoading = false;
       });
     }
+  }
+
+  // Filtrar citas según el mes seleccionado
+  void _filterAppointmentsByMonth() {
+    _filteredAppointments = _appointments.where((appointment) {
+      // Normalizar fechas para comparar solo año y mes
+      final appointmentYear = appointment.appointmentDate.year;
+      final appointmentMonth = appointment.appointmentDate.month;
+      
+      return appointmentYear == _selectedMonth.year &&
+             appointmentMonth == _selectedMonth.month;
+    }).toList();
+    
+    // Ordenar por fecha
+    _filteredAppointments.sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
   }
 
   // Calcular progreso basado en citas completadas
@@ -212,8 +230,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             ),
             const SizedBox(height: 24),
             
-            // Calendario horizontal
-            _buildCalendarSection(isDark),
+            // Calendario semanal horizontal
+            _buildWeeklyCalendar(isDark),
             const SizedBox(height: 24),
             
             // Lista de próximas citas
@@ -230,7 +248,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Badge de investigación activa
+        // Badge de analíticas activa
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
@@ -253,7 +271,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ),
               const SizedBox(width: 8),
               Text(
-                'INVESTIGACIÓN ACTIVA',
+                'ANALÍTICAS ACTIVAS',
                 style: TextStyle(
                   color: AppTheme.primary,
                   fontSize: 12,
@@ -288,7 +306,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     );
   }
 
-  Widget _buildCalendarSection(bool isDark) {
+  Widget _buildWeeklyCalendar(bool isDark) {
     final now = DateTime.now();
     final weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sab', 'Dom'];
     
@@ -310,10 +328,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ),
             ),
             TextButton(
-              onPressed: () {
-                // TODO: Ver calendario completo
-              },
-              child: const Text('Ver calendario'),
+              onPressed: () => _showFullCalendar(context, isDark),
+              child: Text(
+                'Ver calendario',
+                style: TextStyle(color: AppTheme.primary),
+              ),
             ),
           ],
         ),
@@ -332,17 +351,98 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               final isPast = day.isBefore(DateTime(now.year, now.month, now.day));
               final hasAppointment = _hasAppointmentOnDay(day);
               
-              return CalendarDayWidget(
-                dayName: weekDays[index],
-                dayNumber: day.day,
-                isSelected: isSelected,
-                isPast: isPast,
-                hasAppointment: hasAppointment,
+              return GestureDetector(
                 onTap: () {
                   setState(() {
-                    _selectedDayIndex = index;
+                    // Si ya está seleccionado, deseleccionar
+                    if (isSelected) {
+                      _selectedDayIndex = -1;
+                      _selectedDate = null;
+                      _filteredAppointments = _appointments;
+                    } else {
+                      _selectedDayIndex = index;
+                      _selectedDate = day;
+                      _filterAppointmentsByDate(day);
+                    }
                   });
                 },
+                child: Container(
+                  width: 56,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: isSelected 
+                        ? AppTheme.primary
+                        : (isDark ? AppTheme.cardDark : AppTheme.cardLight),
+                    borderRadius: BorderRadius.circular(12),
+                    border: isSelected
+                        ? null
+                        : Border.all(
+                            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                          ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppTheme.primary.withOpacity(0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Opacity(
+                    opacity: isPast && !isSelected ? 0.6 : 1.0,
+                    child: Transform.scale(
+                      scale: isSelected ? 1.05 : 1.0,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Nombre del día
+                          Text(
+                            weekDays[index],
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected
+                                  ? Colors.white.withOpacity(0.8)
+                                  : (isDark 
+                                      ? AppTheme.textSecondaryDark 
+                                      : AppTheme.textSecondary),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          
+                          // Número del día
+                          Text(
+                            day.day.toString().padLeft(2, '0'),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isDark ? Colors.white : AppTheme.textPrimary),
+                            ),
+                          ),
+                          
+                          // Indicador de cita
+                          if (hasAppointment || isSelected)
+                            Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: isSelected 
+                                    ? Colors.white 
+                                    : AppTheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            )
+                          else
+                            const SizedBox(height: 10),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               );
             },
           ),
@@ -351,7 +451,57 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     );
   }
 
+  void _showFullCalendar(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: false,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FullCalendarModal(
+        appointments: _appointments,
+        selectedMonth: _selectedMonth,
+        selectedDate: _selectedDate,
+        onMonthChanged: (month) {
+          setState(() {
+            _selectedMonth = month;
+            _selectedDate = null;
+            _filterAppointmentsByMonth();
+          });
+        },
+        onDateSelected: (date) {
+          setState(() {
+            _selectedDate = date;
+            _selectedDayIndex = -1; // Resetear selección semanal
+            _filterAppointmentsByDate(date);
+          });
+          Navigator.pop(context);
+        },
+        isDark: isDark,
+      ),
+    );
+  }
+
+  void _filterAppointmentsByDate(DateTime date) {
+    // Normalizar la fecha para comparar solo año, mes y día
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    
+    _filteredAppointments = _appointments.where((appointment) {
+      final appointmentDate = DateTime(
+        appointment.appointmentDate.year,
+        appointment.appointmentDate.month,
+        appointment.appointmentDate.day,
+      );
+      return appointmentDate.isAtSameMomentAs(normalizedDate);
+    }).toList();
+    
+    _filteredAppointments.sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
+  }
+
   Widget _buildAppointmentsList(bool isDark) {
+    final title = _selectedDate != null
+        ? 'Citas del ${_selectedDate!.day} ${_getMonthName(_selectedDate!.month).substring(0, 3)}'
+        : 'Próximas Citas';
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -359,44 +509,65 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Próximas Citas',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : AppTheme.textPrimary,
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // TODO: Mostrar filtros
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: isDark ? Colors.grey[800] : Colors.grey[100],
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              ),
+            Expanded(
               child: Text(
-                'Filtrar',
-                style: TextStyle(
-                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
-                  fontSize: 12,
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppTheme.textPrimary,
                 ),
               ),
             ),
+            if (_selectedDate != null)
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedDate = null;
+                    _selectedDayIndex = 3; // Resetear selección
+                  });
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                ),
+                child: Text(
+                  'Ver todas',
+                  style: TextStyle(
+                    color: AppTheme.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 12),
         
-        // Lista de citas
-        if (_appointments.isEmpty)
-          _buildEmptyState()
+        // Lista de citas (mostrar todas si no hay filtro de día, o filtradas si hay)
+        if (_selectedDate == null)
+          // Mostrar todas las citas si no hay día seleccionado
+          if (_appointments.isEmpty)
+            _buildEmptyState()
+          else
+            ..._appointments.map((appointment) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: AppointmentCard(
+                appointment: appointment,
+                onTap: () => _showAppointmentDetails(appointment),
+              ),
+            ))
         else
-          ..._appointments.map((appointment) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: AppointmentCard(
-              appointment: appointment,
-              onTap: () => _showAppointmentDetails(appointment),
-            ),
-          )),
+          // Mostrar citas filtradas por día
+          if (_filteredAppointments.isEmpty)
+            _buildEmptyState()
+          else
+            ..._filteredAppointments.map((appointment) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: AppointmentCard(
+                appointment: appointment,
+                onTap: () => _showAppointmentDetails(appointment),
+              ),
+            )),
       ],
     );
   }
@@ -455,10 +626,17 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   bool _hasAppointmentOnDay(DateTime day) {
-    return _appointments.any((a) =>
-        a.appointmentDate.year == day.year &&
-        a.appointmentDate.month == day.month &&
-        a.appointmentDate.day == day.day);
+    // Normalizar la fecha para comparar solo año, mes y día
+    final normalizedDay = DateTime(day.year, day.month, day.day);
+    
+    return _appointments.any((a) {
+      final appointmentDate = DateTime(
+        a.appointmentDate.year,
+        a.appointmentDate.month,
+        a.appointmentDate.day,
+      );
+      return appointmentDate.isAtSameMomentAs(normalizedDay);
+    });
   }
 
   /// Navegar a la pantalla de crear nueva cita
@@ -830,6 +1008,328 @@ class _AppointmentDetailSheet extends StatelessWidget {
     return '${date.day} ${months[date.month - 1]} ${date.year}, '
            '${date.hour.toString().padLeft(2, '0')}:'
            '${date.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+/// Modal con calendario completo mensual
+class FullCalendarModal extends StatefulWidget {
+  final List<AppointmentModel> appointments;
+  final DateTime selectedMonth;
+  final DateTime? selectedDate;
+  final Function(DateTime) onMonthChanged;
+  final Function(DateTime) onDateSelected;
+  final bool isDark;
+
+  const FullCalendarModal({
+    super.key,
+    required this.appointments,
+    required this.selectedMonth,
+    this.selectedDate,
+    required this.onMonthChanged,
+    required this.onDateSelected,
+    required this.isDark,
+  });
+
+  @override
+  State<FullCalendarModal> createState() => _FullCalendarModalState();
+}
+
+class _FullCalendarModalState extends State<FullCalendarModal> {
+  late DateTime _currentMonth;
+  final now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _currentMonth = widget.selectedMonth;
+  }
+  
+  @override
+  void didUpdateWidget(FullCalendarModal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedMonth != oldWidget.selectedMonth) {
+      _currentMonth = widget.selectedMonth;
+    }
+  }
+
+  bool _hasAppointmentOnDay(DateTime day) {
+    final normalizedDay = DateTime(day.year, day.month, day.day);
+    return widget.appointments.any((a) {
+      final appointmentDate = DateTime(
+        a.appointmentDate.year,
+        a.appointmentDate.month,
+        a.appointmentDate.day,
+      );
+      return appointmentDate.isAtSameMomentAs(normalizedDay);
+    });
+  }
+
+  bool _isCurrentWeek(DateTime day) {
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+    return day.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
+           day.isBefore(endOfWeek.add(const Duration(days: 1)));
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    return months[month - 1];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    final firstDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
+    final lastDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    final firstDayWeekday = firstDayOfMonth.weekday;
+    final daysInMonth = lastDayOfMonth.day;
+    
+    final daysToShow = <DateTime>[];
+    
+    // Días del mes anterior
+    if (firstDayWeekday > 1) {
+      final previousMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
+      final daysInPreviousMonth = DateTime(previousMonth.year, previousMonth.month + 1, 0).day;
+      for (int i = firstDayWeekday - 2; i >= 0; i--) {
+        daysToShow.add(DateTime(previousMonth.year, previousMonth.month, daysInPreviousMonth - i));
+      }
+    }
+    
+    // Días del mes actual
+    for (int day = 1; day <= daysInMonth; day++) {
+      daysToShow.add(DateTime(_currentMonth.year, _currentMonth.month, day));
+    }
+    
+    // Días del mes siguiente
+    final remainingDays = 42 - daysToShow.length;
+    for (int day = 1; day <= remainingDays; day++) {
+      daysToShow.add(DateTime(_currentMonth.year, _currentMonth.month + 1, day));
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        top: MediaQuery.of(context).size.height * 0.15, // Posición más arriba
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: widget.isDark ? AppTheme.cardDark : AppTheme.cardLight,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle mejorado
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Container(
+                width: 48,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            
+            // Header con navegación mejorado
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Botón mes anterior
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
+                        });
+                        widget.onMonthChanged(_currentMonth);
+                      },
+                      icon: Icon(Icons.chevron_left, color: AppTheme.primary, size: 24),
+                      padding: const EdgeInsets.all(8),
+                    ),
+                  ),
+                  
+                  // Mes y año
+                  Column(
+                    children: [
+                      Text(
+                        _getMonthName(_currentMonth.month).toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: widget.isDark ? Colors.white : AppTheme.textPrimary,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_currentMonth.year}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: widget.isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  // Botón mes siguiente
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
+                        });
+                        widget.onMonthChanged(_currentMonth);
+                      },
+                      icon: Icon(Icons.chevron_right, color: AppTheme.primary, size: 24),
+                      padding: const EdgeInsets.all(8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
+          // Días de la semana
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: weekDays.map((day) {
+                return Expanded(
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: widget.isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Grid de días
+          SizedBox(
+            height: 280, // Altura fija para el calendario
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4,
+                  childAspectRatio: 1.1,
+                ),
+                itemCount: daysToShow.length,
+                itemBuilder: (context, index) {
+                  final day = daysToShow[index];
+                  final isCurrentMonth = day.month == _currentMonth.month;
+                  final isToday = day.year == now.year && 
+                                 day.month == now.month && 
+                                 day.day == now.day;
+                  final isSelected = widget.selectedDate != null &&
+                                   day.year == widget.selectedDate!.year &&
+                                   day.month == widget.selectedDate!.month &&
+                                   day.day == widget.selectedDate!.day;
+                  final isPast = day.isBefore(DateTime(now.year, now.month, now.day)) && !isToday;
+                  final hasAppointment = _hasAppointmentOnDay(day);
+                  final isInCurrentWeek = _isCurrentWeek(day) && isCurrentMonth;
+                  
+                  return GestureDetector(
+                    onTap: isCurrentMonth ? () {
+                      widget.onDateSelected(day);
+                    } : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppTheme.primary
+                            : (isInCurrentWeek && !isSelected
+                                ? AppTheme.primary.withOpacity(0.1)
+                                : (isToday && !isSelected
+                                    ? AppTheme.primary.withOpacity(0.15)
+                                    : Colors.transparent)),
+                        borderRadius: BorderRadius.circular(8),
+                        border: isInCurrentWeek && !isSelected
+                            ? Border.all(color: AppTheme.primary.withOpacity(0.3), width: 1.5)
+                            : (isToday && !isSelected
+                                ? Border.all(color: AppTheme.primary, width: 2)
+                                : null),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${day.day}',
+                            style: TextStyle(
+                              fontSize: isCurrentMonth ? 13 : 11,
+                              fontWeight: isSelected || isToday
+                                  ? FontWeight.bold
+                                  : (isCurrentMonth ? FontWeight.w600 : FontWeight.w400),
+                              color: !isCurrentMonth
+                                  ? (widget.isDark ? Colors.grey[700] : Colors.grey[300])
+                                  : (isSelected
+                                      ? Colors.white
+                                      : (isPast
+                                          ? (widget.isDark ? Colors.grey[500] : Colors.grey[400])
+                                          : (widget.isDark ? Colors.white : AppTheme.textPrimary))),
+                            ),
+                          ),
+                          if (hasAppointment && isCurrentMonth)
+                            Container(
+                              margin: const EdgeInsets.only(top: 2),
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppTheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            )
+                          else if (isCurrentMonth)
+                            const SizedBox(height: 6),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+        ],
+      ),
+    ),
+    );
   }
 }
 

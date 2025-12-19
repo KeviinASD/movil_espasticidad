@@ -166,7 +166,7 @@ class _SplashScreenState extends State<SplashScreen>
                           const SizedBox(height: 8),
                           // Subtítulo
                           Text(
-                            'Investigación de Espasticidad',
+                            'Analíticas de Espasticidad',
                             style: GoogleFonts.notoSans(
                               fontSize: 16,
                               fontWeight: FontWeight.normal,

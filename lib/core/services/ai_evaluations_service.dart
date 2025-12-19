@@ -117,6 +117,82 @@ class AiEvaluationsService {
     );
   }
 
+  /// Generar evaluación usando Copilot Medical API
+  Future<AiEvaluationModel> generateWithCopilot({
+    required int appointmentId,
+    required int aiToolId,
+    required String findings,
+    String? masScale,
+    String? medications,
+    int? patientAge,
+    String? patientCondition,
+    String? token,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/ai-evaluations/generate');
+      final body = <String, dynamic>{
+        'appointmentId': appointmentId,
+        'aiToolId': aiToolId,
+        'findings': findings.trim(),
+      };
+      
+      // Solo agregar campos opcionales si tienen valor
+      if (masScale != null && masScale.trim().isNotEmpty) {
+        body['masScale'] = masScale.trim();
+      }
+      if (medications != null && medications.trim().isNotEmpty) {
+        body['medications'] = medications.trim();
+      }
+      if (patientAge != null && patientAge > 0) {
+        body['patientAge'] = patientAge;
+      }
+      if (patientCondition != null && patientCondition.trim().isNotEmpty) {
+        body['patientCondition'] = patientCondition.trim();
+      }
+
+      final response = await http.post(
+        uri,
+        headers: _buildHeaders(token),
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return AiEvaluationModel.fromJson(data);
+      } else {
+        try {
+          final data = jsonDecode(response.body);
+          
+          // Extraer mensaje de error
+          String errorMessage = 'Error al generar evaluación con IA';
+          
+          if (data is Map) {
+            // Si hay un mensaje directo
+            if (data['message'] != null) {
+              errorMessage = data['message'].toString();
+            }
+            // Si hay un array de errores
+            else if (data['errors'] != null && data['errors'] is List) {
+              final errors = data['errors'] as List;
+              errorMessage = errors.join('\n');
+            }
+            // Si hay un error
+            else if (data['error'] != null) {
+              errorMessage = data['error'].toString();
+            }
+          }
+          
+          throw Exception(errorMessage);
+        } catch (e) {
+          if (e is Exception) rethrow;
+          throw Exception('Error al generar evaluación (${response.statusCode}): ${response.body}');
+        }
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
+  }
+
   Map<String, String> _buildHeaders(String? token) {
     return {
       'Content-Type': 'application/json',

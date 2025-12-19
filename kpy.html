@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Analíticas de KPIs</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1C252E",
+                        "text-secondary-light": "#637588",
+                        "text-secondary-dark": "#9dabb9",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111418] dark:text-white transition-colors duration-200">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto shadow-2xl">
+<!-- Header -->
+<header class="flex items-center justify-between p-4 pb-2 bg-background-light dark:bg-background-dark sticky top-0 z-10">
+<div class="flex size-12 shrink-0 items-center">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20" data-alt="Profile picture of a doctor in a white coat" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDEsgatG0H4l0J87_39-UGigIW3ke_lrXOiVLiqb4gwNa4dYJ5aUxe7u4yuHzWTrdAcow1jCHSfWFm4CVWuUqKhxjZ_HG8L0GqR6FJ8xH-e7DMAWg71EESbPkg9GUVMbXmSfiERZ9RJ3PaK52JhlIQwvDryVR-5lqXcUZlVSXAUxXjO9siyXkmYUQYc5_EFoHSTjz5WVZlai9xzWFBWqDutx7BtdsSLASXpzFc3brZLeLlt24h-3zt3kfLcuWZKRsOQvlPkTUQk_bDI");'>
+</div>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Analíticas de KPIs</h2>
+<div class="flex w-12 items-center justify-end">
+<button class="flex items-center justify-center rounded-full size-10 text-primary bg-primary/10 hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">ios_share</span>
+</button>
+</div>
+</header>
+<!-- Date Filter (Segmented Control) -->
+<div class="px-4 py-2">
+<div class="flex h-10 w-full items-center justify-center rounded-lg bg-gray-200 dark:bg-[#283039] p-1">
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-[calc(0.5rem-2px)] px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-primary has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-text-secondary-light dark:text-text-secondary-dark text-xs sm:text-sm font-bold transition-all duration-200">
+<span class="truncate">7 Días</span>
+<input class="invisible w-0 absolute" name="date-filter" type="radio" value="7d"/>
+</label>
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-[calc(0.5rem-2px)] px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-primary has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-text-secondary-light dark:text-text-secondary-dark text-xs sm:text-sm font-bold transition-all duration-200">
+<span class="truncate">Este Mes</span>
+<input checked="" class="invisible w-0 absolute" name="date-filter" type="radio" value="month"/>
+</label>
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-[calc(0.5rem-2px)] px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-primary has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-text-secondary-light dark:text-text-secondary-dark text-xs sm:text-sm font-bold transition-all duration-200">
+<span class="truncate">Histórico</span>
+<input class="invisible w-0 absolute" name="date-filter" type="radio" value="all"/>
+</label>
+</div>
+</div>
+<!-- KPI Summary Grid -->
+<div class="grid grid-cols-2 gap-3 p-4">
+<!-- Card 1 -->
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-surface-light dark:bg-surface-dark shadow-sm">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-[20px]">calendar_month</span>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-xs font-medium uppercase tracking-wider">Citas Totales</p>
+</div>
+<p class="text-2xl font-bold leading-tight">128</p>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#0bda5b] text-sm">trending_up</span>
+<p class="text-[#0bda5b] text-xs font-bold">+12%</p>
+<span class="text-text-secondary-light dark:text-text-secondary-dark text-[10px] ml-1">vs mes ant.</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-surface-light dark:bg-surface-dark shadow-sm">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-xs font-medium uppercase tracking-wider">Éxito Tx</p>
+</div>
+<p class="text-2xl font-bold leading-tight">85%</p>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#0bda5b] text-sm">trending_up</span>
+<p class="text-[#0bda5b] text-xs font-bold">+2.5%</p>
+<span class="text-text-secondary-light dark:text-text-secondary-dark text-[10px] ml-1">eficacia</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-surface-light dark:bg-surface-dark shadow-sm">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-[20px]">diversity_1</span>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-xs font-medium uppercase tracking-wider">Pacientes</p>
+</div>
+<p class="text-2xl font-bold leading-tight">42</p>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#0bda5b] text-sm">group_add</span>
+<p class="text-[#0bda5b] text-xs font-bold">+4</p>
+<span class="text-text-secondary-light dark:text-text-secondary-dark text-[10px] ml-1">activos</span>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-surface-light dark:bg-surface-dark shadow-sm">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-[20px]">timer</span>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-xs font-medium uppercase tracking-wider">T. Recup.</p>
+</div>
+<p class="text-2xl font-bold leading-tight">3.2 <span class="text-base font-normal text-text-secondary-light dark:text-text-secondary-dark">sem</span></p>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#0bda5b] text-sm">arrow_downward</span>
+<p class="text-[#0bda5b] text-xs font-bold">-1.2%</p>
+<span class="text-text-secondary-light dark:text-text-secondary-dark text-[10px] ml-1">mejoría</span>
+</div>
+</div>
+</div>
+<!-- Chart: Evolución de Citas -->
+<div class="px-4 py-2">
+<div class="rounded-xl bg-surface-light dark:bg-surface-dark p-5 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<p class="text-base font-bold leading-normal">Evolución de Citas</p>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-xs font-medium">Volumen semanal de consultas</p>
+</div>
+<div class="bg-primary/10 rounded-lg px-2 py-1">
+<p class="text-primary text-xs font-bold">+12%</p>
+</div>
+</div>
+<div class="relative w-full h-[160px]">
+<svg fill="none" height="100%" preserveaspectratio="none" viewbox="0 0 478 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="paint0_linear_1131_5935" x1="239" x2="239" y1="0" y2="150">
+<stop stop-color="#137fec" stop-opacity="0.3"></stop>
+<stop offset="1" stop-color="#137fec" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<!-- Area Fill -->
+<path d="M0 109C18.15 109 18.15 21 36.3 21C54.46 21 54.46 41 72.6 41C90.77 41 90.77 93 108.9 93C127.08 93 127.08 33 145.2 33C163.38 33 163.38 101 181.5 101C199.69 101 199.69 61 217.8 61C236 61 236 45 254.1 45C272.3 45 272.3 121 290.4 121C308.6 121 308.6 149 326.7 149C344.9 149 344.9 1 363.0 1C381.2 1 381.2 81 399.3 81C417.5 81 417.5 129 435.6 129C453.8 129 453.8 25 472 25V150H0V109Z" fill="url(#paint0_linear_1131_5935)"></path>
+<!-- Line Stroke -->
+<path d="M0 109C18.15 109 18.15 21 36.3 21C54.46 21 54.46 41 72.6 41C90.77 41 90.77 93 108.9 93C127.08 93 127.08 33 145.2 33C163.38 33 163.38 101 181.5 101C199.69 101 199.69 61 217.8 61C236 61 236 45 254.1 45C272.3 45 272.3 121 290.4 121C308.6 121 308.6 149 326.7 149C344.9 149 344.9 1 363.0 1C381.2 1 381.2 81 399.3 81C417.5 81 417.5 129 435.6 129C453.8 129 453.8 25 472 25" stroke="#137fec" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+</div>
+<div class="flex justify-between mt-4 px-2">
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-[11px] font-bold uppercase tracking-wider">Sem 1</p>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-[11px] font-bold uppercase tracking-wider">Sem 2</p>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-[11px] font-bold uppercase tracking-wider">Sem 3</p>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-[11px] font-bold uppercase tracking-wider">Sem 4</p>
+</div>
+</div>
+</div>
+<!-- Chart: Respuesta a Espasticidad -->
+<div class="px-4 py-2">
+<div class="rounded-xl bg-surface-light dark:bg-surface-dark p-5 shadow-sm">
+<div class="flex flex-col gap-1 mb-6">
+<p class="text-base font-bold leading-normal">Respuesta a Espasticidad</p>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-xs font-medium">Distribución por estado del paciente</p>
+</div>
+<div class="grid grid-cols-3 gap-4 items-end justify-items-center h-[160px] px-2 pb-2">
+<!-- Bar 1: Mejora -->
+<div class="flex flex-col items-center gap-2 w-full h-full justify-end group">
+<span class="text-xs font-bold text-[#0bda5b] opacity-0 group-hover:opacity-100 transition-opacity mb-1">65%</span>
+<div class="w-full bg-[#0bda5b]/20 dark:bg-[#0bda5b]/10 rounded-t-lg relative overflow-hidden" style="height: 65%;">
+<div class="absolute bottom-0 w-full bg-[#0bda5b] rounded-t-lg transition-all duration-500 hover:opacity-80" style="height: 100%;"></div>
+</div>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-[11px] font-bold uppercase tracking-wider">Mejora</p>
+</div>
+<!-- Bar 2: Estable -->
+<div class="flex flex-col items-center gap-2 w-full h-full justify-end group">
+<span class="text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity mb-1">25%</span>
+<div class="w-full bg-primary/20 dark:bg-primary/10 rounded-t-lg relative overflow-hidden" style="height: 25%;">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg transition-all duration-500 hover:opacity-80" style="height: 100%;"></div>
+</div>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-[11px] font-bold uppercase tracking-wider">Estable</p>
+</div>
+<!-- Bar 3: Regresión -->
+<div class="flex flex-col items-center gap-2 w-full h-full justify-end group">
+<span class="text-xs font-bold text-[#fa6238] opacity-0 group-hover:opacity-100 transition-opacity mb-1">10%</span>
+<div class="w-full bg-[#fa6238]/20 dark:bg-[#fa6238]/10 rounded-t-lg relative overflow-hidden" style="height: 10%;">
+<div class="absolute bottom-0 w-full bg-[#fa6238] rounded-t-lg transition-all duration-500 hover:opacity-80" style="height: 100%;"></div>
+</div>
+<p class="text-text-secondary-light dark:text-text-secondary-dark text-[11px] font-bold uppercase tracking-wider">Regresión</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity List -->
+<div class="px-4 py-4 pb-8">
+<div class="flex items-center justify-between mb-3">
+<h3 class="text-base font-bold">Últimos Tratamientos</h3>
+<button class="text-primary text-sm font-bold">Ver todo</button>
+</div>
+<div class="flex flex-col gap-3">
+<!-- List Item 1 -->
+<div class="flex items-center justify-between rounded-xl bg-surface-light dark:bg-surface-dark p-3 shadow-sm border-l-4 border-primary">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-10 rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-[20px]">vaccines</span>
+</div>
+<div class="flex flex-col">
+<p class="text-sm font-bold">Toxina Botulínica</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">Paciente ID: #8291</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<p class="text-xs font-bold text-white bg-primary/80 px-2 py-0.5 rounded-full">Completado</p>
+<p class="text-[10px] text-text-secondary-light dark:text-text-secondary-dark mt-1">Hace 2h</p>
+</div>
+</div>
+<!-- List Item 2 -->
+<div class="flex items-center justify-between rounded-xl bg-surface-light dark:bg-surface-dark p-3 shadow-sm border-l-4 border-[#0bda5b]">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-10 rounded-full bg-[#0bda5b]/10 text-[#0bda5b]">
+<span class="material-symbols-outlined text-[20px]">physical_therapy</span>
+</div>
+<div class="flex flex-col">
+<p class="text-sm font-bold">Fisioterapia</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">Paciente ID: #3312</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<p class="text-xs font-bold text-[#0bda5b] bg-[#0bda5b]/20 px-2 py-0.5 rounded-full">Mejora</p>
+<p class="text-[10px] text-text-secondary-light dark:text-text-secondary-dark mt-1">Ayer</p>
+</div>
+</div>
+<!-- List Item 3 -->
+<div class="flex items-center justify-between rounded-xl bg-surface-light dark:bg-surface-dark p-3 shadow-sm border-l-4 border-gray-400">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-10 rounded-full bg-gray-500/10 text-gray-500">
+<span class="material-symbols-outlined text-[20px]">clinical_notes</span>
+</div>
+<div class="flex flex-col">
+<p class="text-sm font-bold">Evaluación Inicial</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">Paciente ID: #9921</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<p class="text-xs font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-full">Pendiente</p>
+<p class="text-[10px] text-text-secondary-light dark:text-text-secondary-dark mt-1">Ayer</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom padding for scroll -->
+<div class="h-5"></div>
+</div>
+</body></html>
