@@ -249,6 +249,12 @@ class AppointmentCard extends StatelessWidget {
   }
 
   String _getAppointmentTitle(AppointmentModel appointment) {
+    // Mostrar el nombre del paciente si está disponible
+    final patientName = appointment.patientTreatment?.patient?.fullName;
+    if (patientName != null && patientName.isNotEmpty) {
+      return patientName;
+    }
+    
     // Si tiene notas, usarlas como título
     if (appointment.notes != null && appointment.notes!.isNotEmpty) {
       return appointment.notes!;

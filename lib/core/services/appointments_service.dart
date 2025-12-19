@@ -74,6 +74,31 @@ class AppointmentsService {
     }
   }
 
+  /// Obtener citas próximas de un doctor
+  /// Retorna solo citas con estado SCHEDULED o IN_PROGRESS
+  /// Ordenadas por fecha ascendente (las más cercanas primero)
+  Future<List<AppointmentModel>> getUpcomingAppointments({
+    required int doctorId,
+    String? token,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/appointments/doctor/$doctorId/upcoming');
+      final response = await http.get(
+        uri,
+        headers: _buildHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => AppointmentModel.fromJson(e)).toList();
+      } else {
+        throw Exception('Error al obtener citas próximas (${response.statusCode})');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
+  }
+
   /// Obtener una cita por ID
   Future<AppointmentModel> getById(int id, {String? token}) async {
     try {

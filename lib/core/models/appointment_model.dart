@@ -1,3 +1,5 @@
+import 'patient_treatment_model.dart';
+
 /// Estados de cita según el backend
 enum AppointmentStatus {
   scheduled('SCHEDULED'),
@@ -39,6 +41,7 @@ class AppointmentModel {
   final AppointmentStatus status;
   final int? progressPercentage;
   final String? notes;
+  final PatientTreatmentModel? patientTreatment;
 
   AppointmentModel({
     required this.appointmentId,
@@ -47,6 +50,7 @@ class AppointmentModel {
     required this.status,
     this.progressPercentage,
     this.notes,
+    this.patientTreatment,
   });
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +61,9 @@ class AppointmentModel {
       status: AppointmentStatus.fromString(json['status'] as String),
       progressPercentage: json['progressPercentage'] as int?,
       notes: json['notes'] as String?,
+      patientTreatment: json['patientTreatment'] != null
+          ? PatientTreatmentModel.fromJson(json['patientTreatment'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -68,7 +75,24 @@ class AppointmentModel {
       'status': status.value,
       'progressPercentage': progressPercentage,
       'notes': notes,
+      'patientTreatment': patientTreatment?.toJson(),
     };
+  }
+
+  // Helper para obtener el nombre del paciente
+  String get patientName =>
+      patientTreatment?.patient?.fullName ?? 'Sin paciente';
+
+  // Helper para obtener el nombre del tratamiento
+  String get treatmentName =>
+      patientTreatment?.treatment?.treatmentName ?? 'Sin tratamiento';
+
+  // Helper para verificar si es hoy
+  bool get isToday {
+    final now = DateTime.now();
+    return appointmentDate.year == now.year &&
+        appointmentDate.month == now.month &&
+        appointmentDate.day == now.day;
   }
 
   /// Obtener el ícono representativo según el estado

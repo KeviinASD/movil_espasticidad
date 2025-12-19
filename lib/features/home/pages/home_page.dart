@@ -3,13 +3,62 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/providers/auth_store.dart';
+import '../../../core/models/appointment_model.dart';
+import '../../../core/services/appointments_service.dart';
 import '../../../theme/app_theme.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/quick_action_card.dart';
+import '../../appointments/widgets/appointment_card.dart';
 import '../../patients/pages/new_patient_page.dart';
+import '../../appointments/pages/clinical_evaluation_page.dart';
+import '../../appointments/pages/ai_diagnosis_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final AppointmentsService _appointmentsService = AppointmentsService();
+  List<AppointmentModel> _upcomingAppointments = [];
+  bool _isLoadingAppointments = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUpcomingAppointments();
+    });
+  }
+
+  Future<void> _loadUpcomingAppointments() async {
+    final authStore = context.read<AuthStore>();
+    final token = authStore.token;
+    final doctorId = authStore.currentUser?.id;
+
+    if (token == null || doctorId == null) return;
+
+    setState(() => _isLoadingAppointments = true);
+
+    try {
+      final appointments = await _appointmentsService.getUpcomingAppointments(
+        doctorId: doctorId,
+        token: token,
+      );
+
+      setState(() {
+        _upcomingAppointments = appointments.take(3).toList(); // Solo las primeras 3
+        _isLoadingAppointments = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingAppointments = false);
+      if (mounted) {
+        debugPrint('Error al cargar citas: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +157,10 @@ class HomePage extends StatelessWidget {
 
               // Progreso General
               _buildProgressSection(isDark),
+              const SizedBox(height: 32),
+
+              // Citas Próximas
+              _buildUpcomingAppointments(context, authStore, isDark),
               const SizedBox(height: 24),
             ],
           ),
@@ -461,5 +514,480 @@ class HomePage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildUpcomingAppointments(
+    BuildContext context,
+    AuthStore authStore,
+    bool isDark,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header con título y botón
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Citas Próximas',
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : AppTheme.textPrimary,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                // Recargar citas al hacer clic en Ver Todo
+                _loadUpcomingAppointments();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Citas actualizadas',
+                      style: GoogleFonts.notoSans(),
+                    ),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
+              child: Text(
+                'Ver Todo',
+                style: GoogleFonts.notoSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Lista de citas
+        _isLoadingAppointments
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            : _upcomingAppointments.isEmpty
+                ? _buildEmptyAppointments(isDark)
+                : Column(
+                    children: _upcomingAppointments
+                        .map((appointment) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: AppointmentCard(
+                                appointment: appointment,
+                                onTap: () => _showAppointmentDetails(appointment),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyAppointments(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Icon(
+            Icons.event_note,
+            size: 64,
+            color: isDark ? Colors.grey[600] : Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No hay citas programadas',
+            style: GoogleFonts.notoSans(
+              color: isDark ? Colors.grey[500] : Colors.grey[600],
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Presiona + para agregar una nueva cita',
+            style: GoogleFonts.notoSans(
+              color: isDark ? Colors.grey[600] : Colors.grey[500],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAppointmentDetails(AppointmentModel appointment) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Título
+            Text(
+              'Detalles de la Cita',
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Info de la cita
+            _buildInfoRow(
+              'Paciente',
+              appointment.patientName,
+              Icons.person,
+              isDark,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              'Tratamiento',
+              appointment.treatmentName,
+              Icons.medical_services,
+              isDark,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              'Fecha',
+              _formatDate(appointment.appointmentDate),
+              Icons.calendar_today,
+              isDark,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              'Estado',
+              appointment.status.displayName,
+              Icons.flag,
+              isDark,
+            ),
+            if (appointment.notes != null) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                'Notas',
+                appointment.notes!,
+                Icons.notes,
+                isDark,
+              ),
+            ],
+            const SizedBox(height: 24),
+            
+            // Acciones
+            Text(
+              'Cambiar estado:',
+              style: GoogleFonts.notoSans(
+                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: AppointmentStatus.values.map((status) {
+                final isCurrentStatus = status == appointment.status;
+                return FilterChip(
+                  label: Text(
+                    status.displayName,
+                    style: GoogleFonts.notoSans(fontSize: 12),
+                  ),
+                  selected: isCurrentStatus,
+                  onSelected: isCurrentStatus 
+                      ? null 
+                      : (_) {
+                          Navigator.pop(context);
+                          _updateAppointmentStatus(appointment, status);
+                        },
+                  backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                  selectedColor: AppTheme.primary.withOpacity(0.2),
+                );
+              }).toList(),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Botón iniciar evaluación
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ClinicalEvaluationPage(
+                        appointment: appointment,
+                        patientName: appointment.patientName,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.assignment),
+                label: Text(
+                  'Iniciar Evaluación Clínica',
+                  style: GoogleFonts.notoSans(),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Botón diagnóstico IA
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AiDiagnosisPage(
+                        appointment: appointment,
+                        patientName: appointment.patientName,
+                      ),
+                    ),
+                  );
+                },
+                icon: Icon(Icons.auto_awesome, color: Colors.purple[400]),
+                label: Text(
+                  'Diagnosticar con IA',
+                  style: GoogleFonts.notoSans(),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.purple[400],
+                  side: BorderSide(color: Colors.purple[400]!),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Botón eliminar
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _deleteAppointment(appointment);
+                },
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                label: Text(
+                  'Eliminar Cita',
+                  style: GoogleFonts.notoSans(),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, IconData icon, bool isDark) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppTheme.primary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.notoSans(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                value,
+                style: GoogleFonts.notoSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white : AppTheme.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}, '
+           '${date.hour.toString().padLeft(2, '0')}:'
+           '${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _deleteAppointment(AppointmentModel appointment) async {
+    // Mostrar diálogo de confirmación
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Eliminar Cita',
+          style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          '¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.',
+          style: GoogleFonts.notoSans(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancelar', style: GoogleFonts.notoSans()),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Eliminar', style: GoogleFonts.notoSans()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final authStore = context.read<AuthStore>();
+      final token = authStore.token;
+
+      if (token == null) {
+        throw Exception('No hay token de autenticación');
+      }
+
+      await _appointmentsService.delete(
+        appointment.appointmentId,
+        token: token,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cita eliminada exitosamente',
+            style: GoogleFonts.notoSans(),
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _loadUpcomingAppointments();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+            style: GoogleFonts.notoSans(),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _updateAppointmentStatus(
+    AppointmentModel appointment,
+    AppointmentStatus newStatus,
+  ) async {
+    try {
+      final authStore = context.read<AuthStore>();
+      final token = authStore.token;
+
+      if (token == null) {
+        throw Exception('No hay token de autenticación');
+      }
+
+      await _appointmentsService.update(
+        appointment.appointmentId,
+        status: newStatus,
+        token: token,
+      );
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Estado actualizado a: ${newStatus.displayName}',
+            style: GoogleFonts.notoSans(),
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _loadUpcomingAppointments();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+            style: GoogleFonts.notoSans(),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
