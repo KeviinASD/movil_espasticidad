@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Confiar en certificados del sistema -->
+            <certificates src="system" />
+            <!-- Confiar en certificados de usuario (útil para desarrollo) -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Configuración específica para el dominio de producción -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">rimenri-back-fisiolab.siu9f2.easypanel.host</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>
