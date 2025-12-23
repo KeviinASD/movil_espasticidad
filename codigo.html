@@ -1,16 +1,10 @@
 <!DOCTYPE html>
-
 <html class="dark" lang="es"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Analíticas de Diagnósticos</title>
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<title>Perfil del Médico</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script id="tailwind-config">
         tailwind.config = {
@@ -18,24 +12,37 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#137fec",
-                        "background-light": "#f6f7f8",
-                        "background-dark": "#101922",
-                        "surface-dark": "#1c2630",
-                        "surface-light": "#ffffff",
+                        "primary": "#007AFF", // iOS Blue
+                        "primary-dark": "#0A84FF",
+                        "background-light": "#F2F2F7", // iOS Light Background
+                        "background-dark": "#000000",
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#1C1C1E",
                     },
                     fontFamily: {
                         "display": ["Space Grotesk", "sans-serif"],
-                        "body": ["Space Grotesk", "sans-serif"]
+                        "body": ["Noto Sans", "sans-serif"]
                     },
-                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        'ios': '0 2px 8px rgba(0, 0, 0, 0.04)',
+                        'ios-card': '0 4px 12px rgba(0, 0, 0, 0.06)',
+                    }
                 },
             },
         }
     </script>
 <style>
-        /* Custom scrollbar hide for horizontal scroll */
-        .no-scrollbar::-webkit-scrollbar {
+        body {
+            min-height: 100dvh;
+        }.no-scrollbar::-webkit-scrollbar {
             display: none;
         }
         .no-scrollbar {
@@ -48,212 +55,121 @@
       min-height: max(884px, 100dvh);
     }
   </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
   </head>
-<body class="bg-background-light dark:bg-background-dark font-display min-h-screen">
-<div class="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto shadow-2xl bg-background-light dark:bg-background-dark">
-<!-- Top App Bar -->
-<header class="flex items-center justify-between p-4 pb-2 sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
-<button class="flex size-10 items-center justify-center text-slate-900 dark:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-<span class="material-symbols-outlined">arrow_back</span>
+<body class="antialiased text-gray-900 dark:text-gray-100 bg-background-light dark:bg-background-dark font-body selection:bg-primary/20">
+<div class="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden">
+<header class="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50">
+<button class="flex items-center justify-center p-2 -ml-2 rounded-full text-primary active:bg-gray-200/50 dark:active:bg-gray-700/50 transition-colors">
+<span class="material-symbols-outlined text-[26px]">arrow_back_ios_new</span>
+<span class="ml-1 text-base font-medium leading-none">Atrás</span>
 </button>
-<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-2">Analíticas</h2>
-<div class="flex items-center justify-end">
-<button class="flex items-center justify-center rounded-lg h-10 px-3 bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-slate-900 dark:text-white gap-2 text-sm font-bold shadow-sm">
-<span class="material-symbols-outlined text-[20px]">calendar_today</span>
-<span>30 Días</span>
-</button>
-</div>
+<h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[17px] font-semibold text-gray-900 dark:text-white">Mi Perfil</h1>
+<div class="w-10"></div>
 </header>
-<!-- Main Scrollable Content -->
-<main class="flex-1 flex flex-col gap-6 px-4 py-4 pb-24">
-<!-- KPI Cards Summary -->
-<section class="grid grid-cols-2 gap-3">
-<!-- Total Card (Full Width) -->
-<div class="col-span-2 flex flex-col gap-1 rounded-2xl p-5 bg-surface-light dark:bg-surface-dark shadow-sm border border-gray-100 dark:border-gray-800">
-<div class="flex items-center gap-2 mb-1">
-<span class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary">
-<span class="material-symbols-outlined text-[18px]">medical_services</span>
-</span>
-<p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Diagnósticos</p>
-</div>
-<div class="flex items-end gap-3">
-<p class="text-slate-900 dark:text-white text-3xl font-bold tracking-tight">1,240</p>
-<span class="text-emerald-500 text-sm font-bold mb-1 flex items-center">
-<span class="material-symbols-outlined text-[16px]">trending_up</span>
-                            +12%
-                        </span>
+<main class="flex-1 flex flex-col pb-32">
+<div class="flex flex-col items-center pt-8 pb-8 px-4">
+<div class="relative group cursor-pointer">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-24 w-24 shadow-md border-2 border-surface-light dark:border-surface-dark ring-2 ring-gray-100 dark:ring-gray-800" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAXONatMlOlROd9IQBgEUzsFgBwvBgtzOBHCgpyTsYTrMSxQrnRy6-CISpQY40-Wk0Xop0OzCO_cKYLaY-0J-khcL6hPg5QZzcR6O2pCfr9l3OF0_gSYiRn67lV61wPG5JF2j8qFH0rMxmOOxFFdDyWgC6VDkxyFz17Vyd2m77QLxeFchgd2gxkMcpebAHmrNJsa8CBwA8b18vT1SpQph1SOCSfvV8yRD11OJ-oavNN6gzCj1jwDpsxYdYyG4Xkfu79eg4-tbrV7K1E");'></div>
+<div class="absolute bottom-0 right-0 bg-primary text-white p-1.5 rounded-full border-4 border-background-light dark:border-background-dark shadow-sm transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[16px] block">edit</span>
 </div>
 </div>
-<!-- Spasticity Card -->
-<div class="flex flex-col gap-2 rounded-2xl p-4 bg-surface-light dark:bg-surface-dark shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
-<div class="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full -mr-2 -mt-2"></div>
-<p class="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wider">Con Espasticidad</p>
-<p class="text-slate-900 dark:text-white text-2xl font-bold">840</p>
-<div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-1 overflow-hidden">
-<div class="bg-primary h-full rounded-full" style="width: 68%"></div>
-</div>
-<p class="text-primary text-sm font-bold mt-1">68%</p>
-</div>
-<!-- No Spasticity Card -->
-<div class="flex flex-col gap-2 rounded-2xl p-4 bg-surface-light dark:bg-surface-dark shadow-sm border border-gray-100 dark:border-gray-800">
-<p class="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wider">Sin Espasticidad</p>
-<p class="text-slate-900 dark:text-white text-2xl font-bold">400</p>
-<div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-1 overflow-hidden">
-<div class="bg-slate-400 dark:bg-slate-500 h-full rounded-full" style="width: 32%"></div>
-</div>
-<p class="text-gray-500 dark:text-gray-400 text-sm font-bold mt-1">32%</p>
-</div>
-</section>
-<!-- Donut Chart Section -->
-<section class="flex flex-col gap-4">
-<h3 class="text-slate-900 dark:text-white text-lg font-bold px-1">Distribución de Casos</h3>
-<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
-<div class="flex items-center justify-between">
-<!-- Legend -->
-<div class="flex flex-col gap-4">
-<div class="flex flex-col gap-1">
-<div class="flex items-center gap-2">
-<div class="w-3 h-3 rounded-full bg-primary shadow-[0_0_8px_rgba(19,127,236,0.5)]"></div>
-<span class="text-slate-700 dark:text-gray-300 font-medium text-sm">Positivos</span>
-</div>
-<span class="text-2xl font-bold text-slate-900 dark:text-white pl-5">68%</span>
-</div>
-<div class="flex flex-col gap-1">
-<div class="flex items-center gap-2">
-<div class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600"></div>
-<span class="text-slate-700 dark:text-gray-300 font-medium text-sm">Negativos</span>
-</div>
-<span class="text-2xl font-bold text-slate-900 dark:text-white pl-5">32%</span>
+<h2 class="text-2xl font-bold text-gray-900 dark:text-white mt-4 font-display">Dr. Juan Pérez</h2>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/30 text-primary text-[11px] font-bold uppercase tracking-wider">Neurólogo</span>
+<span class="text-sm text-gray-500 dark:text-gray-400">Lic. #849201</span>
 </div>
 </div>
-<!-- Donut Chart SVG -->
-<div class="relative size-32 flex items-center justify-center">
-<svg class="size-full -rotate-90" viewbox="0 0 36 36">
-<!-- Background Circle -->
-<path class="text-slate-200 dark:text-slate-700" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4"></path>
-<!-- Progress Circle (68%) -->
-<path class="text-primary drop-shadow-[0_0_4px_rgba(19,127,236,0.4)]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="68, 100" stroke-linecap="round" stroke-width="4"></path>
-</svg>
-<div class="absolute flex flex-col items-center justify-center">
-<span class="material-symbols-outlined text-primary text-2xl">pie_chart</span>
+<div class="px-4 mb-6">
+<h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-4">Información Personal</h3>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200/50 dark:border-gray-800 overflow-hidden">
+<div class="flex items-center p-4 border-b border-gray-100 dark:border-gray-800">
+<div class="w-8 shrink-0 flex items-center justify-center text-gray-400">
+<span class="material-symbols-outlined text-[20px]">badge</span>
+</div>
+<div class="flex-1 ml-3">
+<label class="block text-[10px] uppercase text-gray-400 font-bold mb-0.5">Nombre Completo</label>
+<input class="w-full bg-transparent border-0 p-0 text-gray-900 dark:text-white font-medium focus:ring-0 text-[15px] placeholder-gray-400" name="full_name" type="text" value="Juan Pérez"/>
+</div>
+</div>
+<div class="flex items-center p-4">
+<div class="w-8 shrink-0 flex items-center justify-center text-gray-400">
+<span class="material-symbols-outlined text-[20px]">mail</span>
+</div>
+<div class="flex-1 ml-3">
+<label class="block text-[10px] uppercase text-gray-400 font-bold mb-0.5">Correo Electrónico</label>
+<input class="w-full bg-transparent border-0 p-0 text-gray-900 dark:text-white font-medium focus:ring-0 text-[15px] placeholder-gray-400" name="email" type="email" value="juan.perez@medresearch.app"/>
 </div>
 </div>
 </div>
+<p class="text-[11px] text-gray-400 mt-2 ml-4">
+            Estos datos se actualizarán en la tabla <code class="font-mono text-primary bg-primary/10 px-1 rounded">doctors</code>.
+        </p>
 </div>
-</section>
-<!-- Bar Chart Section (Timeline) -->
-<section class="flex flex-col gap-4">
-<div class="flex items-center justify-between px-1">
-<h3 class="text-slate-900 dark:text-white text-lg font-bold">Evolución Mensual</h3>
-<button class="text-primary text-sm font-semibold">Ver Todo</button>
-</div>
-<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm overflow-x-auto no-scrollbar">
-<div class="flex items-end justify-between gap-3 min-w-[280px] h-48 pt-4">
-<!-- Bar Item 1 -->
-<div class="flex flex-col items-center gap-2 group cursor-pointer w-full">
-<div class="w-full relative h-32 w-2 bg-slate-100 dark:bg-slate-800 rounded-full flex flex-col justify-end overflow-hidden group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors">
-<div class="w-full bg-slate-400 dark:bg-slate-500/50" style="height: 30%"></div>
-<div class="w-full bg-primary" style="height: 45%"></div>
-</div>
-<span class="text-xs text-gray-500 font-medium">Sem 1</span>
-</div>
-<!-- Bar Item 2 -->
-<div class="flex flex-col items-center gap-2 group cursor-pointer w-full">
-<div class="w-full relative h-32 w-2 bg-slate-100 dark:bg-slate-800 rounded-full flex flex-col justify-end overflow-hidden group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors">
-<div class="w-full bg-slate-400 dark:bg-slate-500/50" style="height: 25%"></div>
-<div class="w-full bg-primary" style="height: 60%"></div>
-</div>
-<span class="text-xs text-gray-500 font-medium">Sem 2</span>
-</div>
-<!-- Bar Item 3 (Active/Highlight) -->
-<div class="flex flex-col items-center gap-2 group cursor-pointer w-full">
-<div class="relative mb-2 opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-slate-800 text-white text-[10px] py-1 px-2 rounded pointer-events-none">
-                                85 Casos
-                            </div>
-<div class="w-full relative h-32 w-2 bg-slate-100 dark:bg-slate-800 rounded-full flex flex-col justify-end overflow-hidden ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-<div class="w-full bg-slate-400 dark:bg-slate-500/50" style="height: 20%"></div>
-<div class="w-full bg-primary shadow-[0_0_10px_rgba(19,127,236,0.6)]" style="height: 75%"></div>
-</div>
-<span class="text-xs text-slate-900 dark:text-white font-bold">Sem 3</span>
-</div>
-<!-- Bar Item 4 -->
-<div class="flex flex-col items-center gap-2 group cursor-pointer w-full">
-<div class="w-full relative h-32 w-2 bg-slate-100 dark:bg-slate-800 rounded-full flex flex-col justify-end overflow-hidden group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors">
-<div class="w-full bg-slate-400 dark:bg-slate-500/50" style="height: 35%"></div>
-<div class="w-full bg-primary" style="height: 50%"></div>
-</div>
-<span class="text-xs text-gray-500 font-medium">Sem 4</span>
-</div>
-</div>
-<div class="flex items-center justify-center gap-4 mt-4">
-<div class="flex items-center gap-1.5">
-<div class="w-2 h-2 rounded-full bg-primary"></div>
-<span class="text-[10px] text-gray-400 uppercase tracking-wide">Espasticidad</span>
-</div>
-<div class="flex items-center gap-1.5">
-<div class="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500"></div>
-<span class="text-[10px] text-gray-400 uppercase tracking-wide">Sin Espasticidad</span>
-</div>
-</div>
-</div>
-</section>
-<!-- Recent Diagnostics List -->
-<section class="flex flex-col gap-3">
-<h3 class="text-slate-900 dark:text-white text-lg font-bold px-1">Diagnósticos Recientes</h3>
-<div class="flex flex-col gap-3">
-<!-- Item 1 -->
-<div class="flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-800">
+<div class="px-4 mb-6">
+<h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-4">Actividad del Sistema</h3>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200/50 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+<button class="w-full flex items-center justify-between p-4 active:bg-gray-50 dark:active:bg-gray-800 transition-colors group">
 <div class="flex items-center gap-3">
-<div class="size-10 rounded-full bg-background-light dark:bg-background-dark flex items-center justify-center border border-gray-200 dark:border-gray-700">
-<span class="material-symbols-outlined text-gray-400 text-xl">person</span>
+<div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+<span class="material-symbols-outlined text-[18px]">history</span>
 </div>
-<div class="flex flex-col">
-<p class="text-slate-900 dark:text-white font-bold text-sm">Paciente #4920</p>
-<p class="text-gray-500 text-xs">Hoy, 10:23 AM</p>
+<div class="text-left">
+<span class="block text-[15px] font-medium text-gray-900 dark:text-white">Registro de Actividad</span>
+<span class="block text-[11px] text-gray-500 dark:text-gray-400">Ver system_logs recientes</span>
 </div>
 </div>
-<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                            Detectado
-                        </span>
-</div>
-<!-- Item 2 -->
-<div class="flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-800">
+<span class="material-symbols-outlined text-gray-400 group-active:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 active:bg-gray-50 dark:active:bg-gray-800 transition-colors group">
 <div class="flex items-center gap-3">
-<div class="size-10 rounded-full bg-background-light dark:bg-background-dark flex items-center justify-center border border-gray-200 dark:border-gray-700">
-<span class="material-symbols-outlined text-gray-400 text-xl">person</span>
+<div class="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+<span class="material-symbols-outlined text-[18px]">analytics</span>
 </div>
-<div class="flex flex-col">
-<p class="text-slate-900 dark:text-white font-bold text-sm">Paciente #4918</p>
-<p class="text-gray-500 text-xs">Ayer, 4:15 PM</p>
-</div>
-</div>
-<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
-                            Negativo
-                        </span>
-</div>
-<!-- Item 3 -->
-<div class="flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-800">
-<div class="flex items-center gap-3">
-<div class="size-10 rounded-full bg-background-light dark:bg-background-dark flex items-center justify-center border border-gray-200 dark:border-gray-700">
-<span class="material-symbols-outlined text-gray-400 text-xl">person</span>
-</div>
-<div class="flex flex-col">
-<p class="text-slate-900 dark:text-white font-bold text-sm">Paciente #4912</p>
-<p class="text-gray-500 text-xs">Ayer, 2:30 PM</p>
+<div class="text-left">
+<span class="block text-[15px] font-medium text-gray-900 dark:text-white">Estadísticas de Diagnóstico</span>
 </div>
 </div>
-<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                            Detectado
-                        </span>
-</div>
-</div>
-</section>
-</main>
-<!-- Floating Action Button -->
-<div class="fixed bottom-6 right-6 z-40">
-<button class="flex items-center justify-center size-14 rounded-full bg-primary text-white shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-colors hover:scale-105 active:scale-95">
-<span class="material-symbols-outlined text-2xl">add</span>
+<span class="material-symbols-outlined text-gray-400 group-active:translate-x-1 transition-transform">chevron_right</span>
 </button>
 </div>
 </div>
+<div class="px-4 mb-8">
+<h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-4">Cuenta y Seguridad</h3>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200/50 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+<button class="w-full flex items-center justify-between p-4 active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
+<span class="text-[15px] font-medium text-gray-900 dark:text-white">Cambiar Contraseña</span>
+<span class="material-symbols-outlined text-gray-400">chevron_right</span>
+</button>
+<div class="flex items-center justify-between p-4">
+<span class="text-[15px] font-medium text-gray-900 dark:text-white">Notificaciones Push</span>
+<label class="flex items-center cursor-pointer relative" for="notifications-toggle">
+<input checked="" class="sr-only peer" id="notifications-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-500"></div>
+</label>
+</div>
+<button class="w-full flex items-center justify-between p-4 active:bg-red-50 dark:active:bg-red-900/10 transition-colors group">
+<span class="text-[15px] font-medium text-red-600 dark:text-red-400">Cerrar Sesión</span>
+<span class="material-symbols-outlined text-red-600 dark:text-red-400 text-[20px]">logout</span>
+</button>
+</div>
+</div>
+<div class="text-center px-4">
+<p class="text-xs text-gray-400">NeuroResearch App v2.4.0 (Build 142)</p>
+<p class="text-[10px] text-gray-300 dark:text-gray-600 mt-1">ID de dispositivo: iOS-iPhone13-X29</p>
+</div>
+</main>
+<div class="fixed bottom-0 left-0 right-0 p-4 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 z-50 safe-area-bottom">
+<button class="w-full bg-primary hover:bg-primary-dark active:scale-[0.98] transition-all text-white font-bold text-[15px] py-3.5 px-4 rounded-xl shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">save</span>
+        Guardar Cambios
+    </button>
+</div>
+</div>
+
 </body></html>

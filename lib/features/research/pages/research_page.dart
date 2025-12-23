@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -80,6 +81,8 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
             'copilotCount': 0,
             'chatgptPercentage': 0,
             'copilotPercentage': 0,
+            'chatgptChange': 0,
+            'weeklyTrend': <dynamic>[],
             'recentJustifications': <dynamic>[],
           };
         }),
@@ -107,7 +110,14 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
       print('✅ Datos cargados exitosamente');
       print('  KPIs: ${results[0]}');
       print('  AI Preferences: ${results[1]}');
+      print('  AI Preferences tipo: ${results[1].runtimeType}');
       print('  Statistics: ${results[2]}');
+      
+      // Verificar específicamente los datos de AI Preferences
+      final aiPrefs = results[1] as Map<String, dynamic>;
+      print('  AI Preferences keys: ${aiPrefs.keys.toList()}');
+      print('  AI Preferences total: ${aiPrefs['total']}');
+      print('  AI Preferences weeklyTrend: ${aiPrefs['weeklyTrend']}');
 
       setState(() {
         _kpisData = results[0] as Map<String, dynamic>;
@@ -378,6 +388,25 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
     final totalAppointments = _kpisData!['totalAppointments'] ?? 0;
     final totalPatients = _kpisData!['totalPatients'] ?? 0;
     final successRate = _kpisData!['successRate'] ?? 0;
+    final avgRecoveryTime = _kpisData!['avgRecoveryTime'] ?? 0.0;
+    final appointmentsChange = _kpisData!['appointmentsChange'] ?? 0;
+    final patientsChange = _kpisData!['patientsChange'] ?? 0;
+    final appointmentsWeeklyEvolution = _kpisData!['appointmentsWeeklyEvolution'] as List<dynamic>? ?? [];
+    final spasticityResponse = _kpisData!['spasticityResponse'] as Map<String, dynamic>? ?? {};
+    final recentTreatments = _kpisData!['recentTreatments'] as List<dynamic>? ?? [];
+
+    // Formatear cambios porcentuales
+    String formatChange(int change) {
+      if (change > 0) return '+$change%';
+      if (change < 0) return '$change%';
+      return '0%';
+    }
+
+    Color getChangeColor(int change) {
+      if (change > 0) return const Color(0xFF0bda5b);
+      if (change < 0) return const Color(0xFFfa6238);
+      return Colors.grey;
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -397,15 +426,15 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
                 icon: Icons.calendar_month,
                 value: totalAppointments.toString(),
                 label: 'Citas Totales',
-                change: '+12%',
-                changeColor: const Color(0xFF0bda5b),
+                change: formatChange(appointmentsChange),
+                changeColor: getChangeColor(appointmentsChange),
                 isDark: isDark,
               ),
               _buildKpiCard(
                 icon: Icons.check_circle,
                 value: '$successRate%',
                 label: 'Éxito Tx',
-                change: '+2.5%',
+                change: '', // No tenemos cambio histórico para éxito
                 changeColor: const Color(0xFF0bda5b),
                 isDark: isDark,
               ),
@@ -413,16 +442,16 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
                 icon: Icons.people,
                 value: totalPatients.toString(),
                 label: 'Pacientes',
-                change: '+4',
-                changeColor: const Color(0xFF0bda5b),
+                change: formatChange(patientsChange),
+                changeColor: getChangeColor(patientsChange),
                 isDark: isDark,
               ),
               _buildKpiCard(
                 icon: Icons.timer,
-                value: '3.2',
+                value: avgRecoveryTime.toStringAsFixed(1),
                 unit: 'sem',
                 label: 'T. Recup.',
-                change: '-1.2%',
+                change: '', // No tenemos cambio para tiempo de recuperación
                 changeColor: const Color(0xFF0bda5b),
                 isDark: isDark,
               ),
@@ -430,13 +459,13 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
           ),
           const SizedBox(height: 24),
           // Gráfico de evolución de citas
-          _buildAppointmentsChart(isDark),
+          _buildAppointmentsChart(isDark, appointmentsWeeklyEvolution),
           const SizedBox(height: 24),
           // Gráfico de respuesta a espasticidad
-          _buildSpasticityResponseChart(isDark),
+          _buildSpasticityResponseChart(isDark, spasticityResponse),
           const SizedBox(height: 24),
           // Últimos tratamientos
-          _buildRecentTreatments(isDark),
+          _buildRecentTreatments(isDark, recentTreatments),
           const SizedBox(height: 100),
         ],
       ),
@@ -543,7 +572,7 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildAppointmentsChart(bool isDark) {
+  Widget _buildAppointmentsChart(bool isDark, List<dynamic> weeklyEvolution) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -605,7 +634,7 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
           SizedBox(
             height: 120,
             child: CustomPaint(
-              painter: _LineChartPainter(),
+              painter: _LineChartPainter(data: weeklyEvolution),
               child: Container(),
             ),
           ),
@@ -624,7 +653,10 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildSpasticityResponseChart(bool isDark) {
+  Widget _buildSpasticityResponseChart(bool isDark, Map<String, dynamic> spasticityResponse) {
+    final mejora = spasticityResponse['mejora'] ?? 65;
+    final estable = spasticityResponse['estable'] ?? 25;
+    final regresion = spasticityResponse['regresion'] ?? 10;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -661,9 +693,9 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildResponseBar('Mejora', 65, const Color(0xFF0bda5b), isDark),
-              _buildResponseBar('Estable', 25, AppTheme.primary, isDark),
-              _buildResponseBar('Regresión', 10, const Color(0xFFfa6238), isDark),
+              _buildResponseBar('Mejora', mejora as int, const Color(0xFF0bda5b), isDark),
+              _buildResponseBar('Estable', estable as int, AppTheme.primary, isDark),
+              _buildResponseBar('Regresión', regresion as int, const Color(0xFFfa6238), isDark),
             ],
           ),
         ],
@@ -715,7 +747,7 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildRecentTreatments(bool isDark) {
+  Widget _buildRecentTreatments(bool isDark, List<dynamic> recentTreatments) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -744,36 +776,66 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
           ],
         ),
         const SizedBox(height: 12),
-        // Lista de tratamientos (simplificada)
-        _buildTreatmentItem(
-          icon: Icons.vaccines,
-          title: 'Toxina Botulínica',
-          patientId: '#8291',
-          status: 'Completado',
-          statusColor: AppTheme.primary,
-          timeAgo: 'Hace 2h',
-          isDark: isDark,
-        ),
-        const SizedBox(height: 12),
-        _buildTreatmentItem(
-          icon: Icons.fitness_center,
-          title: 'Fisioterapia',
-          patientId: '#3312',
-          status: 'Mejora',
-          statusColor: const Color(0xFF0bda5b),
-          timeAgo: 'Ayer',
-          isDark: isDark,
-        ),
-        const SizedBox(height: 12),
-        _buildTreatmentItem(
-          icon: Icons.medical_services,
-          title: 'Evaluación Inicial',
-          patientId: '#9921',
-          status: 'Pendiente',
-          statusColor: Colors.grey,
-          timeAgo: 'Ayer',
-          isDark: isDark,
-        ),
+        // Lista de tratamientos desde backend
+        if (recentTreatments.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1C252E) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                'No hay tratamientos recientes',
+                style: GoogleFonts.notoSans(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+            ),
+          )
+        else
+          ...recentTreatments.asMap().entries.map((entry) {
+            final treatment = entry.value as Map<String, dynamic>;
+            final index = entry.key;
+            final treatmentName = treatment['treatmentName'] as String? ?? 'Tratamiento';
+            final patientId = treatment['patientId'] as int? ?? 0;
+            final status = treatment['status'] as String? ?? 'Pendiente';
+            final timeAgo = treatment['timeAgo'] as String? ?? 'Reciente';
+            
+            // Mapear nombre de tratamiento a ícono
+            IconData icon;
+            if (treatmentName.toLowerCase().contains('toxina') || treatmentName.toLowerCase().contains('botulínica')) {
+              icon = Icons.vaccines;
+            } else if (treatmentName.toLowerCase().contains('fisioterapia')) {
+              icon = Icons.fitness_center;
+            } else {
+              icon = Icons.medical_services;
+            }
+            
+            // Mapear estado a color
+            Color statusColor;
+            if (status == 'COMPLETED' || status == 'Completado') {
+              statusColor = AppTheme.primary;
+            } else if (status.toLowerCase().contains('mejora')) {
+              statusColor = const Color(0xFF0bda5b);
+            } else {
+              statusColor = Colors.grey;
+            }
+            
+            return Padding(
+              padding: EdgeInsets.only(bottom: index < recentTreatments.length - 1 ? 12 : 0),
+              child: _buildTreatmentItem(
+                icon: icon,
+                title: treatmentName,
+                patientId: '#$patientId',
+                status: status,
+                statusColor: statusColor,
+                timeAgo: timeAgo,
+                isDark: isDark,
+              ),
+            );
+          }).toList(),
       ],
     );
   }
@@ -873,24 +935,78 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
   // ============== TAB PREFERENCIAS IA ==============
   Widget _buildAiPreferencesTab(bool isDark) {
     if (_aiPreferencesData == null) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Cargando preferencias IA...'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              'Cargando preferencias IA...',
+              style: GoogleFonts.notoSans(
+                fontSize: 14,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
           ],
         ),
       );
     }
 
-    final total = _aiPreferencesData!['total'] ?? 0;
-    final chatgptCount = _aiPreferencesData!['chatgptCount'] ?? 0;
-    final copilotCount = _aiPreferencesData!['copilotCount'] ?? 0;
-    final chatgptPercentage = _aiPreferencesData!['chatgptPercentage'] ?? 0;
-    final copilotPercentage = _aiPreferencesData!['copilotPercentage'] ?? 0;
-    final recentJustifications = _aiPreferencesData!['recentJustifications'] as List<dynamic>? ?? [];
+    try {
+      final total = _aiPreferencesData!['total'] ?? 0;
+      final chatgptCount = _aiPreferencesData!['chatgptCount'] ?? 0;
+      final copilotCount = _aiPreferencesData!['copilotCount'] ?? 0;
+      final chatgptPercentage = _aiPreferencesData!['chatgptPercentage'] ?? 0;
+      final copilotPercentage = _aiPreferencesData!['copilotPercentage'] ?? 0;
+      final chatgptChange = _aiPreferencesData!['chatgptChange'] as int? ?? 0;
+      final weeklyTrend = _aiPreferencesData!['weeklyTrend'] as List<dynamic>? ?? [];
+      final recentJustifications = _aiPreferencesData!['recentJustifications'] as List<dynamic>? ?? [];
+
+      // Debug: imprimir datos para verificar
+      print('📊 AI Preferences Data:');
+      print('  total: $total');
+      print('  chatgptCount: $chatgptCount');
+      print('  copilotCount: $copilotCount');
+      print('  chatgptPercentage: $chatgptPercentage');
+      print('  copilotPercentage: $copilotPercentage');
+      print('  chatgptChange: $chatgptChange');
+      print('  weeklyTrend length: ${weeklyTrend.length}');
+      print('  recentJustifications length: ${recentJustifications.length}');
+      print('  _aiPreferencesData completo: $_aiPreferencesData');
+
+    // Si no hay datos, mostrar mensaje
+    if (total == 0 && chatgptCount == 0 && copilotCount == 0) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.info_outline, size: 64, color: Colors.blue[300]),
+              const SizedBox(height: 16),
+              Text(
+                'No hay datos de preferencias IA',
+                style: GoogleFonts.notoSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'No se han registrado evaluaciones de IA seleccionadas aún.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.notoSans(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -899,10 +1015,12 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
         children: [
           // Tarjeta principal de líder
           _buildLeaderCard(
+            context: context,
             chatgptPercentage: chatgptPercentage,
             copilotPercentage: copilotPercentage,
             chatgptCount: chatgptCount,
             copilotCount: copilotCount,
+            chatgptChange: chatgptChange,
             isDark: isDark,
           ),
           const SizedBox(height: 16),
@@ -921,7 +1039,7 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
               Expanded(
                 child: _buildSecondaryStatCard(
                   icon: Icons.medical_services,
-                  value: '4.8/5',
+                  value: '4.8/5', // Mantener este valor por ahora, no está en el backend
                   label: 'Calidad Respuesta',
                   isDark: isDark,
                 ),
@@ -932,7 +1050,7 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
           // Gráfico de tendencia semanal
           _buildWeeklyTrendChart(isDark),
           const SizedBox(height: 24),
-          // Nube de motivos
+          // Nube de motivos (mantener hardcoded por ahora, no está en el backend)
           _buildJustificationKeywords(isDark),
           const SizedBox(height: 24),
           // Justificaciones recientes
@@ -941,13 +1059,59 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
         ],
       ),
     );
+    } catch (e, stackTrace) {
+      print('❌ Error construyendo tab de Preferencias IA: $e');
+      print('Stack trace: $stackTrace');
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+              const SizedBox(height: 16),
+              Text(
+                'Error al mostrar preferencias IA',
+                style: GoogleFonts.notoSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                e.toString(),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.notoSans(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildLeaderCard({
+    required BuildContext context,
     required int chatgptPercentage,
     required int copilotPercentage,
     required int chatgptCount,
     required int copilotCount,
+    required int chatgptChange,
     required bool isDark,
   }) {
     return Container(
@@ -984,15 +1148,25 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0bda5b).withOpacity(0.1),
+                  color: chatgptChange > 0
+                      ? const Color(0xFF0bda5b).withOpacity(0.1)
+                      : chatgptChange < 0
+                          ? const Color(0xFFfa6238).withOpacity(0.1)
+                          : Colors.grey.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '+12% vs mes anterior',
+                  chatgptChange != 0
+                      ? '${chatgptChange > 0 ? '+' : ''}$chatgptChange% vs período anterior'
+                      : 'Sin cambios',
                   style: GoogleFonts.notoSans(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0bda5b),
+                    color: chatgptChange > 0
+                        ? const Color(0xFF0bda5b)
+                        : chatgptChange < 0
+                            ? const Color(0xFFfa6238)
+                            : Colors.grey[600],
                   ),
                 ),
               ),
@@ -1068,47 +1242,53 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
               color: isDark ? Colors.grey[800] : Colors.grey[100],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Stack(
-              children: [
-                Row(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final totalPercentage = chatgptPercentage + copilotPercentage;
+                final chatgptWidth = totalPercentage > 0 
+                    ? (chatgptPercentage / totalPercentage) * constraints.maxWidth
+                    : 0.0;
+                final copilotWidth = totalPercentage > 0
+                    ? (copilotPercentage / totalPercentage) * constraints.maxWidth
+                    : 0.0;
+                
+                return Stack(
                   children: [
-                    Expanded(
-                      flex: chatgptPercentage,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
+                    Row(
+                      children: [
+                        if (chatgptWidth > 0)
+                          Container(
+                            width: chatgptWidth,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary,
+                              borderRadius: copilotWidth > 0
+                                  ? const BorderRadius.only(
+                                      topLeft: Radius.circular(8),
+                                      bottomLeft: Radius.circular(8),
+                                    )
+                                  : BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: copilotPercentage,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFa855f7),
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
+                        if (copilotWidth > 0)
+                          Container(
+                            width: copilotWidth,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFa855f7),
+                              borderRadius: chatgptWidth > 0
+                                  ? const BorderRadius.only(
+                                      topRight: Radius.circular(8),
+                                      bottomRight: Radius.circular(8),
+                                    )
+                                  : BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                      ),
+                      ],
                     ),
                   ],
-                ),
-                if (chatgptPercentage > 0 && copilotPercentage > 0)
-                  Positioned(
-                    left: (chatgptPercentage / 100) * MediaQuery.of(context).size.width * 0.85,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 2,
-                      color: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
-                    ),
-                  ),
-              ],
+                );
+              },
             ),
           ),
           const SizedBox(height: 16),
@@ -1193,6 +1373,7 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
   }
 
   Widget _buildWeeklyTrendChart(bool isDark) {
+    final weeklyTrend = _aiPreferencesData?['weeklyTrend'] as List<dynamic>? ?? [];
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1211,6 +1392,7 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'Tendencia Semanal',
@@ -1221,132 +1403,105 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
             ),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            height: 160,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.end,
+          if (weeklyTrend.isEmpty)
+            Container(
+              height: 200,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.show_chart,
+                    size: 48,
+                    color: isDark ? Colors.grey[600] : Colors.grey[400],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No hay datos disponibles',
+                    style: GoogleFonts.notoSans(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _buildWeekBar(40, 30, 1, isDark),
-                _buildWeekBar(55, 25, 2, isDark),
-                _buildWeekBar(70, 45, 3, isDark),
-                _buildWeekBar(65, 50, 4, isDark),
-                _buildWeekBar(85, 40, 5, isDark, isCurrent: true),
+                // Gráfico de líneas
+                SizedBox(
+                  height: 180,
+                  child: CustomPaint(
+                    painter: _LineTrendChartPainter(
+                      weeklyTrend: weeklyTrend,
+                      isDark: isDark,
+                    ),
+                    child: Container(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Leyenda
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildLineLegendItem(isDark, AppTheme.primary, 'ChatGPT'),
+                    const SizedBox(width: 24),
+                    _buildLineLegendItem(isDark, const Color(0xFFa855f7), 'Copilot'),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Etiquetas de semanas
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: weeklyTrend.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final isCurrent = index == weeklyTrend.length - 1;
+                    return Text(
+                      isCurrent ? 'Actual' : 'Sem ${index + 1}',
+                      style: GoogleFonts.notoSans(
+                        fontSize: 11,
+                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                        color: isCurrent
+                            ? AppTheme.primary
+                            : (isDark ? Colors.grey[500] : Colors.grey[500]),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'ChatGPT',
-                    style: GoogleFonts.notoSans(
-                      fontSize: 12,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 24),
-              Row(
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFa855f7),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Copilot',
-                    style: GoogleFonts.notoSans(
-                      fontSize: 12,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildWeekBar(int chatgptHeight, int copilotHeight, int week, bool isDark, {bool isCurrent = false}) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
+  Widget _buildLineLegendItem(bool isDark, Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 40,
-          height: 160,
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              // Copilot (fondo)
-              Positioned(
-                bottom: 0,
-                child: Container(
-                  width: 16,
-                  height: (copilotHeight / 100) * 160,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFa855f7),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              // ChatGPT (delante)
-              Positioned(
-                bottom: (copilotHeight / 100) * 160,
-                child: Container(
-                  width: 16,
-                  height: (chatgptHeight / 100) * 160,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary,
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: isCurrent
-                        ? [
-                            BoxShadow(
-                              color: AppTheme.primary.withOpacity(0.5),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
-              ),
-            ],
+          width: 20,
+          height: 3,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(width: 8),
         Text(
-          isCurrent ? 'Actual' : 'Sem $week',
+          label,
           style: GoogleFonts.notoSans(
-            fontSize: 10,
-            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-            color: isCurrent
-                ? (isDark ? Colors.grey[300] : Colors.grey[700])
-                : (isDark ? Colors.grey[500] : Colors.grey[500]),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.grey[300] : Colors.grey[700],
           ),
         ),
       ],
     );
   }
+
 
   Widget _buildJustificationKeywords(bool isDark) {
     final keywords = [
@@ -1535,19 +1690,29 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      width: 4,
-                      height: double.infinity,
-                      color: color,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      justification['justification'] as String? ?? '',
-                      style: GoogleFonts.notoSans(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey[300] : Colors.grey[700],
-                        height: 1.5,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 4,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          constraints: const BoxConstraints(minHeight: 40),
+                        ),
+                        Expanded(
+                          child: Text(
+                            justification['justification'] as String? ?? '',
+                            style: GoogleFonts.notoSans(
+                              fontSize: 14,
+                              color: isDark ? Colors.grey[300] : Colors.grey[700],
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1591,8 +1756,14 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
                   icon: Icons.medical_services,
                   value: totalDiagnoses.toString(),
                   label: 'Total Diagnósticos',
-                  change: '+12%',
-                  changeColor: const Color(0xFF0bda5b),
+                  change: _diagnosticsData?['diagnosesChange'] != null
+                      ? '${(_diagnosticsData!['diagnosesChange'] as int) > 0 ? '+' : ''}${_diagnosticsData!['diagnosesChange']}%'
+                      : null,
+                  changeColor: _diagnosticsData?['diagnosesChange'] != null
+                      ? ((_diagnosticsData!['diagnosesChange'] as int) > 0
+                          ? const Color(0xFF0bda5b)
+                          : const Color(0xFFfa6238))
+                      : null,
                   isDark: isDark,
                 ),
               ),
@@ -1629,7 +1800,7 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
           _buildDonutChart(percentage, withSpasticity, withoutSpasticity, isDark),
           const SizedBox(height: 24),
           // Bar Chart (Timeline)
-          _buildMonthlyEvolutionChart(isDark),
+          _buildMonthlyEvolutionChart(isDark, _diagnosticsData?['monthlyEvolution'] as List<dynamic>? ?? []),
           const SizedBox(height: 24),
           // Recent Diagnostics List
           _buildRecentDiagnosticsList(isDark),
@@ -1877,9 +2048,9 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildMonthlyEvolutionChart(bool isDark) {
+  Widget _buildMonthlyEvolutionChart(bool isDark, List<dynamic> monthlyEvolution) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1c2630) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1896,6 +2067,7 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1921,137 +2093,100 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 192,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.end,
+          const SizedBox(height: 20),
+          if (monthlyEvolution.isEmpty)
+            Container(
+              height: 200,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.show_chart,
+                    size: 48,
+                    color: isDark ? Colors.grey[600] : Colors.grey[400],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No hay datos disponibles',
+                    style: GoogleFonts.notoSans(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _buildMonthBar(30, 45, 1, isDark),
-                _buildMonthBar(25, 60, 2, isDark),
-                _buildMonthBar(20, 75, 3, isDark, isCurrent: true),
-                _buildMonthBar(35, 50, 4, isDark),
+                // Gráfico de líneas
+                SizedBox(
+                  height: 180,
+                  child: CustomPaint(
+                    painter: _MonthlyEvolutionChartPainter(
+                      monthlyEvolution: monthlyEvolution,
+                      isDark: isDark,
+                    ),
+                    child: Container(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Leyenda
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildMonthlyLegendItem(isDark, AppTheme.primary, 'Espasticidad'),
+                    const SizedBox(width: 24),
+                    _buildMonthlyLegendItem(isDark, Colors.grey[400]!, 'Sin Espasticidad'),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Etiquetas de meses
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: monthlyEvolution.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final isCurrent = index == monthlyEvolution.length - 1;
+                    return Text(
+                      isCurrent ? 'Actual' : 'Mes ${index + 1}',
+                      style: GoogleFonts.notoSans(
+                        fontSize: 11,
+                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                        color: isCurrent
+                            ? AppTheme.primary
+                            : (isDark ? Colors.grey[500] : Colors.grey[500]),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Espasticidad',
-                    style: GoogleFonts.notoSans(
-                      fontSize: 10,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 24),
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Sin Espasticidad',
-                    style: GoogleFonts.notoSans(
-                      fontSize: 10,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildMonthBar(int withoutHeight, int withHeight, int week, bool isDark, {bool isCurrent = false}) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
+  Widget _buildMonthlyLegendItem(bool isDark, Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 16,
-          height: 192,
+          width: 20,
+          height: 3,
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[800] : Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              // Sin espasticidad (fondo)
-              Positioned(
-                bottom: 0,
-                child: Container(
-                  width: 16,
-                  height: (withoutHeight / 100) * 192,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[400],
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(8),
-                      bottomRight: Radius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              // Con espasticidad (arriba)
-              Positioned(
-                bottom: (withoutHeight / 100) * 192,
-                child: Container(
-                  width: 16,
-                  height: (withHeight / 100) * 192,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(8),
-                      topRight: Radius.circular(8),
-                    ),
-                    boxShadow: isCurrent
-                        ? [
-                            BoxShadow(
-                              color: AppTheme.primary.withOpacity(0.6),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
-              ),
-            ],
+            color: color,
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(width: 8),
         Text(
-          isCurrent ? 'Sem 3' : 'Sem $week',
+          label,
           style: GoogleFonts.notoSans(
-            fontSize: 11,
-            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-            color: isCurrent
-                ? (isDark ? Colors.white : Colors.black)
-                : (isDark ? Colors.grey[500] : Colors.grey[500]),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.grey[300] : Colors.grey[700],
           ),
         ),
       ],
@@ -2219,53 +2354,360 @@ class _ResearchPageState extends State<ResearchPage> with SingleTickerProviderSt
   }
 }
 
-// Custom painter para el gráfico de línea
-class _LineChartPainter extends CustomPainter {
+// Custom painter para el gráfico de línea de tendencia semanal
+class _LineTrendChartPainter extends CustomPainter {
+  final List<dynamic> weeklyTrend;
+  final bool isDark;
+
+  _LineTrendChartPainter({
+    required this.weeklyTrend,
+    required this.isDark,
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
+    if (weeklyTrend.isEmpty) return;
+
+    final chatgptValues = weeklyTrend.map((w) => (w as Map<String, dynamic>)['chatgpt'] as int? ?? 0).toList();
+    final copilotValues = weeklyTrend.map((w) => (w as Map<String, dynamic>)['copilot'] as int? ?? 0).toList();
+
+    const double padding = 20.0;
+    final double chartWidth = size.width - (padding * 2);
+    final double chartHeight = size.height - (padding * 2);
+    final double stepX = weeklyTrend.length > 1 ? chartWidth / (weeklyTrend.length - 1) : 0;
+
+    // Dibujar líneas de referencia (grid)
+    final gridPaint = Paint()
+      ..color = isDark ? Colors.grey[800]! : Colors.grey[200]!
+      ..strokeWidth = 1.0;
+
+    for (int i = 0; i <= 4; i++) {
+      final y = padding + (chartHeight / 4) * i;
+      canvas.drawLine(
+        Offset(padding, y),
+        Offset(size.width - padding, y),
+        gridPaint,
+      );
+    }
+
+    // Función para convertir valor a coordenada Y
+    double valueToY(int value) {
+      return padding + chartHeight - (value / 100) * chartHeight;
+    }
+
+    // Dibujar línea de Copilot (fondo)
+    if (copilotValues.any((v) => v > 0)) {
+      final copilotPath = Path();
+      final copilotPaint = Paint()
+        ..color = const Color(0xFFa855f7)
+        ..strokeWidth = 3.0
+        ..style = PaintingStyle.stroke;
+
+      for (int i = 0; i < copilotValues.length; i++) {
+        final x = padding + (stepX * i);
+        final y = valueToY(copilotValues[i]);
+        if (i == 0) {
+          copilotPath.moveTo(x, y);
+        } else {
+          copilotPath.lineTo(x, y);
+        }
+      }
+      canvas.drawPath(copilotPath, copilotPaint);
+
+      // Dibujar puntos de Copilot
+      final copilotPointPaint = Paint()
+        ..color = const Color(0xFFa855f7)
+        ..style = PaintingStyle.fill;
+      for (int i = 0; i < copilotValues.length; i++) {
+        final x = padding + (stepX * i);
+        final y = valueToY(copilotValues[i]);
+        canvas.drawCircle(Offset(x, y), 5, copilotPointPaint);
+        // Dibujar valor
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: '${copilotValues[i]}%',
+            style: TextStyle(
+              fontSize: 10,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: ui.TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(canvas, Offset(x - textPainter.width / 2, y - 18));
+      }
+    }
+
+    // Dibujar línea de ChatGPT
+    if (chatgptValues.any((v) => v > 0)) {
+      final chatgptPath = Path();
+      final chatgptPaint = Paint()
+        ..color = AppTheme.primary
+        ..strokeWidth = 3.0
+        ..style = PaintingStyle.stroke;
+
+      for (int i = 0; i < chatgptValues.length; i++) {
+        final x = padding + (stepX * i);
+        final y = valueToY(chatgptValues[i]);
+        if (i == 0) {
+          chatgptPath.moveTo(x, y);
+        } else {
+          chatgptPath.lineTo(x, y);
+        }
+      }
+      canvas.drawPath(chatgptPath, chatgptPaint);
+
+      // Dibujar puntos de ChatGPT
+      final chatgptPointPaint = Paint()
+        ..color = AppTheme.primary
+        ..style = PaintingStyle.fill;
+      for (int i = 0; i < chatgptValues.length; i++) {
+        final x = padding + (stepX * i);
+        final y = valueToY(chatgptValues[i]);
+        canvas.drawCircle(Offset(x, y), 5, chatgptPointPaint);
+        // Dibujar valor
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: '${chatgptValues[i]}%',
+            style: TextStyle(
+              fontSize: 10,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: ui.TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(canvas, Offset(x - textPainter.width / 2, y - 18));
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LineTrendChartPainter oldDelegate) =>
+      oldDelegate.weeklyTrend != weeklyTrend || oldDelegate.isDark != isDark;
+}
+
+// Custom painter para el gráfico de línea de evolución mensual
+class _MonthlyEvolutionChartPainter extends CustomPainter {
+  final List<dynamic> monthlyEvolution;
+  final bool isDark;
+
+  _MonthlyEvolutionChartPainter({
+    required this.monthlyEvolution,
+    required this.isDark,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (monthlyEvolution.isEmpty) return;
+
+    final withSpasticityValues = monthlyEvolution.map((m) => (m as Map<String, dynamic>)['withSpasticity'] as int? ?? 0).toList();
+    final withoutSpasticityValues = monthlyEvolution.map((m) => (m as Map<String, dynamic>)['withoutSpasticity'] as int? ?? 0).toList();
+
+    const double padding = 20.0;
+    final double chartWidth = size.width - (padding * 2);
+    final double chartHeight = size.height - (padding * 2);
+    final double stepX = monthlyEvolution.length > 1 ? chartWidth / (monthlyEvolution.length - 1) : 0;
+
+    // Dibujar líneas de referencia (grid)
+    final gridPaint = Paint()
+      ..color = isDark ? Colors.grey[800]! : Colors.grey[200]!
+      ..strokeWidth = 1.0;
+
+    for (int i = 0; i <= 4; i++) {
+      final y = padding + (chartHeight / 4) * i;
+      canvas.drawLine(
+        Offset(padding, y),
+        Offset(size.width - padding, y),
+        gridPaint,
+      );
+    }
+
+    // Función para convertir porcentaje a coordenada Y (los valores ya vienen como porcentajes 0-100)
+    double valueToY(int percentage) {
+      return padding + chartHeight - (percentage / 100) * chartHeight;
+    }
+
+    // Dibujar línea de Sin Espasticidad (fondo)
+    if (withoutSpasticityValues.any((v) => v > 0)) {
+      final withoutPath = Path();
+      final withoutPaint = Paint()
+        ..color = Colors.grey[400]!
+        ..strokeWidth = 3.0
+        ..style = PaintingStyle.stroke;
+
+      for (int i = 0; i < withoutSpasticityValues.length; i++) {
+        final x = padding + (stepX * i);
+        final y = valueToY(withoutSpasticityValues[i]);
+        if (i == 0) {
+          withoutPath.moveTo(x, y);
+        } else {
+          withoutPath.lineTo(x, y);
+        }
+      }
+      canvas.drawPath(withoutPath, withoutPaint);
+
+      // Dibujar puntos de Sin Espasticidad
+      final withoutPointPaint = Paint()
+        ..color = Colors.grey[400]!
+        ..style = PaintingStyle.fill;
+      for (int i = 0; i < withoutSpasticityValues.length; i++) {
+        final x = padding + (stepX * i);
+        final y = valueToY(withoutSpasticityValues[i]);
+        canvas.drawCircle(Offset(x, y), 5, withoutPointPaint);
+        // Dibujar valor si es suficientemente grande
+        if (withoutSpasticityValues[i] > 5) {
+          final textPainter = TextPainter(
+            text: TextSpan(
+              text: '${withoutSpasticityValues[i]}%',
+              style: TextStyle(
+                fontSize: 10,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            textDirection: ui.TextDirection.ltr,
+          );
+          textPainter.layout();
+          textPainter.paint(canvas, Offset(x - textPainter.width / 2, y - 18));
+        }
+      }
+    }
+
+    // Dibujar línea de Con Espasticidad
+    if (withSpasticityValues.any((v) => v > 0)) {
+      final withPath = Path();
+      final withPaint = Paint()
+        ..color = AppTheme.primary
+        ..strokeWidth = 3.0
+        ..style = PaintingStyle.stroke;
+
+      for (int i = 0; i < withSpasticityValues.length; i++) {
+        final x = padding + (stepX * i);
+        final y = valueToY(withSpasticityValues[i]);
+        if (i == 0) {
+          withPath.moveTo(x, y);
+        } else {
+          withPath.lineTo(x, y);
+        }
+      }
+      canvas.drawPath(withPath, withPaint);
+
+      // Dibujar puntos de Con Espasticidad
+      final withPointPaint = Paint()
+        ..color = AppTheme.primary
+        ..style = PaintingStyle.fill;
+      for (int i = 0; i < withSpasticityValues.length; i++) {
+        final x = padding + (stepX * i);
+        final y = valueToY(withSpasticityValues[i]);
+        canvas.drawCircle(Offset(x, y), 5, withPointPaint);
+        // Dibujar valor si es suficientemente grande
+        if (withSpasticityValues[i] > 5) {
+          final textPainter = TextPainter(
+            text: TextSpan(
+              text: '${withSpasticityValues[i]}%',
+              style: TextStyle(
+                fontSize: 10,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            textDirection: ui.TextDirection.ltr,
+          );
+          textPainter.layout();
+          textPainter.paint(canvas, Offset(x - textPainter.width / 2, y - 18));
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MonthlyEvolutionChartPainter oldDelegate) =>
+      oldDelegate.monthlyEvolution != monthlyEvolution || oldDelegate.isDark != isDark;
+}
+
+// Custom painter para el gráfico de línea
+class _LineChartPainter extends CustomPainter {
+  final List<dynamic> data;
+
+  _LineChartPainter({this.data = const []});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.isEmpty) {
+      // Si no hay datos, dibujar línea plana
+      final paint = Paint()
+        ..color = AppTheme.primary
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke;
+
+      canvas.drawLine(
+        Offset(0, size.height / 2),
+        Offset(size.width, size.height / 2),
+        paint,
+      );
+      return;
+    }
+
     final paint = Paint()
       ..color = AppTheme.primary
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
     final path = Path();
-    final points = [
-      Offset(size.width * 0.1, size.height * 0.7),
-      Offset(size.width * 0.3, size.height * 0.5),
-      Offset(size.width * 0.5, size.height * 0.3),
-      Offset(size.width * 0.7, size.height * 0.4),
-      Offset(size.width * 0.9, size.height * 0.2),
-    ];
-
-    path.moveTo(points[0].dx, points[0].dy);
-    for (int i = 1; i < points.length; i++) {
-      path.lineTo(points[i].dx, points[i].dy);
+    final normalizedData = data.map((v) => (v as num).toDouble()).toList();
+    
+    // Normalizar datos al rango de altura disponible (invertir porque Y crece hacia abajo)
+    final maxValue = normalizedData.isEmpty ? 1 : normalizedData.reduce((a, b) => a > b ? a : b);
+    final minValue = 0;
+    final range = maxValue - minValue;
+    
+    final pointCount = normalizedData.length;
+    final points = <Offset>[];
+    
+    for (int i = 0; i < pointCount; i++) {
+      final x = size.width * (i + 1) / (pointCount + 1);
+      final normalizedY = range > 0 
+        ? (normalizedData[i] - minValue) / range 
+        : 0.5;
+      final y = size.height * (1 - normalizedY * 0.8 - 0.1); // Dejar 10% de margen arriba y abajo
+      points.add(Offset(x, y));
     }
 
-    canvas.drawPath(path, paint);
+    if (points.isNotEmpty) {
+      path.moveTo(points[0].dx, points[0].dy);
+      for (int i = 1; i < points.length; i++) {
+        path.lineTo(points[i].dx, points[i].dy);
+      }
 
-    // Dibujar puntos
-    final pointPaint = Paint()
-      ..color = AppTheme.primary
-      ..style = PaintingStyle.fill;
+      canvas.drawPath(path, paint);
 
-    for (final point in points) {
-      canvas.drawCircle(point, 4, pointPaint);
+      // Dibujar puntos
+      final pointPaint = Paint()
+        ..color = AppTheme.primary
+        ..style = PaintingStyle.fill;
+
+      for (final point in points) {
+        canvas.drawCircle(point, 4, pointPaint);
+      }
+
+      // Relleno con gradiente
+      final fillPath = Path.from(path);
+      fillPath.lineTo(points.last.dx, size.height);
+      fillPath.lineTo(points.first.dx, size.height);
+      fillPath.close();
+
+      final fillPaint = Paint()
+        ..color = AppTheme.primary.withOpacity(0.2)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawPath(fillPath, fillPaint);
     }
-
-    // Relleno con gradiente
-    final fillPath = Path.from(path);
-    fillPath.lineTo(size.width * 0.9, size.height);
-    fillPath.lineTo(size.width * 0.1, size.height);
-    fillPath.close();
-
-    final fillPaint = Paint()
-      ..color = AppTheme.primary.withOpacity(0.2)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawPath(fillPath, fillPaint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _LineChartPainter oldDelegate) => 
+    oldDelegate.data != data;
 }
