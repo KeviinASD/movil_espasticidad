@@ -26,22 +26,46 @@ class AuthService {
           'email': email.trim(),
           'password': password.trim(),
         }),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Timeout: El servidor no respondió a tiempo. Verifica tu conexión a internet.');
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         return AuthResponseModel.fromJson(data);
       } else {
+        // Intentar parsear el mensaje de error del servidor
         try {
-          final data = jsonDecode(response.body);
-          throw Exception(
-              data['message'] ?? 'Credenciales inválidas (${response.statusCode})');
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          final message = data['message'] ?? 
+                         data['error'] ?? 
+                         'Error del servidor (${response.statusCode})';
+          throw Exception(message);
         } catch (_) {
-          throw Exception('Error al iniciar sesión (${response.statusCode})');
+          // Si no se puede parsear, usar el status code
+          String errorMessage = 'Error al iniciar sesión';
+          if (response.statusCode == 401 || response.statusCode == 403) {
+            errorMessage = 'Credenciales inválidas';
+          } else if (response.statusCode == 500) {
+            errorMessage = 'Error interno del servidor. Por favor, contacta al administrador.';
+          } else if (response.statusCode >= 400) {
+            errorMessage = 'Error del servidor (${response.statusCode})';
+          }
+          throw Exception(errorMessage);
         }
       }
+    } on http.ClientException {
+      // Errores de red (conexión fallida, DNS, etc.)
+      throw Exception('Error de conexión: No se pudo conectar al servidor. Verifica tu conexión a internet y que el servidor esté disponible.');
+    } on Exception {
+      // Ya es una Exception con mensaje personalizado, relanzarla
+      rethrow;
     } catch (e) {
-      throw Exception('Error de conexión: ${e.toString()}');
+      // Cualquier otro error
+      throw Exception('Error inesperado: ${e.toString()}');
     }
   }
 

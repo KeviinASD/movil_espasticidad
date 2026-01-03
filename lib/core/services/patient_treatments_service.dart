@@ -93,7 +93,24 @@ class PatientTreatmentsService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         return PatientTreatmentModel.fromJson(jsonDecode(response.body));
       } else {
-        throw Exception('Error al crear tratamiento: ${response.statusCode}');
+        String errorMessage = 'Error al crear tratamiento (${response.statusCode})';
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData is Map) {
+            if (errorData['message'] != null) {
+              errorMessage = errorData['message'];
+            } else if (errorData['errors'] != null) {
+              if (errorData['errors'] is List) {
+                errorMessage = (errorData['errors'] as List).join(', ');
+              } else {
+                errorMessage = errorData['errors'].toString();
+              }
+            }
+          }
+        } catch (_) {
+          // Si no se puede parsear el error, usar el mensaje genérico
+        }
+        throw Exception(errorMessage);
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');
